@@ -1,6 +1,9 @@
 import React from 'react';
 import './App.css';
 
+import homePage from "./components/HomePage";
+import HomePage from "./components/HomePage";
+
 function App() {
 
     const header = () => {
@@ -19,19 +22,23 @@ function App() {
         )
     }
 
+    function has_scrolled() : boolean {
+        return window.scrollY > 50;
+    }
+
     return (
-        <div className="h-screen">
+        <div className="h-screen bg-background">
 
             {/** Header **/}
-            {header()}
+            {has_scrolled() ? header() : ""}
 
             {/** Body **/}
-            <div className="flex justify-center items-center h-full bg-background">
-
+            <div className="flex justify-center items-center h-full">
+                <HomePage/>
             </div>
 
             {/** Footer **/}
-            {footer()}
+            {has_scrolled() ? footer() : ""}
 
         </div>
     )

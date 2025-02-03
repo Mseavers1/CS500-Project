@@ -1,3 +1,6 @@
+@import "@fontsource/poppins";
+@import "@fontsource/nunito";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
