@@ -3,6 +3,10 @@ export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        poppins: ["Poppins", "sans-serif"],
+        nunito: ["Nunito", "sans-serif"],
+      },
       colors: {
         primary_bars: "#1E3A8A",
         secondary_bars: "#3B82F6",
