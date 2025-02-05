@@ -1,6 +1,8 @@
 import {ChevronDown, ChevronUp, Eye, EyeOff} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
+import IError from "./IError";
+
 function HomePage() {
 
     const [showPassword, setShowPassword] = useState(false);
@@ -11,70 +13,240 @@ function HomePage() {
     const [showConfirmPasswordSignUp, setShowConfirmPasswordSignUp] = useState(false);
     const [selectedItem, setSelectedItem] = useState<string>("Select Recovery Option");
 
+    const [emailSignUp, setEmailSignUp] = useState<string>("");
+    const [usernameSignUp, setUsernameSignUp] = useState<string>("");
+    const [phoneSignUp, setPhoneSignUp] = useState<string>("");
+    const [passwordSignUp, setPasswordSignUp] = useState<string>("");
+    const [confirmPasswordSignUp, setConfirmPasswordSignUp] = useState<string>("");
+
+    const [errorSignUp, setErrorSignUp] = useState<IError[]>([]);
+
     function selectOption(option : string) {
         setSelectedItem(option);
         setShowRecoveryItems(false);
     }
 
+    function validateResponses(isSignUp : boolean = true) {
+
+        setErrorSignUp([])
+
+        // Validate Email
+        validateEmail(emailSignUp)
+
+        // Validate Username
+        validateUsername(usernameSignUp)
+
+        // Validate Phone
+        validatePhone(phoneSignUp)
+
+        // Validate Passwords
+        validatePassword(passwordSignUp, confirmPasswordSignUp)
+    }
+
+    function validateEmail(email : string) {
+
+        let msg : string = "";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Check if empty
+        if (email == "") msg = "Please enter a email address.";
+
+        // Check if is email address
+        else if (emailRegex.test(email)) msg = "Please enter a valid email address.";
+
+        // Check if taken
+
+        // Return if no error
+        else return;
+
+        const err : IError = {message: msg, type: "Email"};
+        setErrorSignUp([...errorSignUp, err]);
+    }
+
+    function validateUsername(username : string) {
+
+        let msg : string = "";
+
+        // Check if empty
+        if (username == "") msg = "Please enter a username.";
+
+        // Check if there is a @ sign
+        else if (username.includes('@')) msg = "Username can not have the @ symbol in it.";
+
+        // Check if there is any spaces
+        else if (username.includes(' ')) msg = "Username can not have any spaces in it.";
+
+        // Check if taken
+
+        // Return if no error
+        else return;
+
+        const err : IError = {message: msg, type: "Username"};
+        setErrorSignUp([...errorSignUp, err]);
+
+    }
+
+    function validatePhone(phone : string) {
+        let msg : string = "";
+        const phoneRegex = /^(?:\d{10}|\d{3}[-\s]?\d{3}[-\s]?\d{4})$/;
+
+        // Check if empty
+        if (phone == "") msg = "Please enter a phone number.";
+
+        // Check if there are only numbers
+        else if (phoneRegex.test(phone)) msg = "Please enter a valid phone number.";
+
+        // Check if taken
+
+        // Return if no error
+        else return;
+
+        const err : IError = {message: msg, type: "Phone"};
+        setErrorSignUp([...errorSignUp, err]);
+    }
+
+    function validatePassword(password : string, confirmPassword : string) {
+
+        let msg : string = "";
+        const upperCaseRegex = /[A-Z]/;
+        const lowerCaseRegex = /[a-z]/;
+        const numberRegex = /\d/;
+
+        // Check if the confirmation password is empty
+        if (confirmPassword == "") {
+            msg = "Please enter a password";
+            const err2 : IError = {message: msg, type: "Confirm Password"};
+            setErrorSignUp([...errorSignUp, err2]);
+        }
+
+        // Check if empty
+        if (password == "") msg = "Please enter a password.";
+
+        // Check if password has min length of 8
+        else if (password.length < 8) msg = "Passwords must be at least 8 characters long.";
+
+        // Check if contains 1 uppercase letter
+        else if (upperCaseRegex.test(password)) msg = "Passwords must have at least 1 uppercase letter.";
+
+        // Check if contains 1 lowercase letter
+        else if (lowerCaseRegex.test(password)) msg = "Passwords must have at least 1 lowercase letter.";
+
+        // Check if contains 1 number
+        else if (numberRegex.test(password)) msg = "Passwords must have at least 1 number.";
+
+        // Check if Passwords matches
+        else if (password !== confirmPassword) {
+            msg = "Passwords do not match.";
+            const err2 : IError = {message: msg, type: "Confirm Password"};
+            setErrorSignUp([...errorSignUp, err2]);
+        }
+
+        // Return if no error
+        else return;
+
+        const err : IError = {message: msg, type: "Password"};
+        setErrorSignUp([...errorSignUp, err]);
+
+    }
+
+    const errorText = (error : IError | undefined) => {
+
+        if (error == undefined) {
+            return " "
+        }
+
+        return (
+            <p className="font-poppins text-red-500 text-sm text-left self-start italic pl-5">
+                {error.message}
+            </p>
+        )
+    }
+
     const signUp = () => {
         return (
-            <div className="fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
                     <h2 className="font-poppins text-xl font-semibold">Creating an Account</h2>
 
                     <div className="flex flex-col gap-3 items-center">
                         {/** Email **/}
-                        <input type="text" placeholder="Email*"
-                               className="border border-gray-300 rounded-lg px-5 py-2 w-[460px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        <div className="flex flex-col gap-1">
+                            <input type="text" placeholder="Email*" value={emailSignUp} onChange={(e) => setEmailSignUp(e.target.value)}
+                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[460px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+                            {errorSignUp.some(error => error.type === "Email") ? errorText(errorSignUp.find(error => error.type === "Email")) : ""}
+                        </div>
 
                         <div className="flex flex-row gap-3">
+
                             {/** Username **/}
-                            <input type="text" placeholder="Username*"
-                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <div className="flex flex-col gap-1">
+                                <input type="text" placeholder="Username*" value={usernameSignUp} onChange={(e) => setUsernameSignUp(e.target.value)}
+                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+                                {errorSignUp.some(error => error.type === "Username") ? errorText(errorSignUp.find(error => error.type === "Username")) : ""}
+                            </div>
 
                             {/** Phone Number **/}
-                            <input type="tel" maxLength={10} placeholder="Phone Number (optional)"
-                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <div className="flex flex-col gap-1">
+                                <input type="tel" maxLength={10} placeholder="Phone Number" value={phoneSignUp} onChange={(e) => setPhoneSignUp(e.target.value)}
+                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+                                {errorSignUp.some(error => error.type === "Phone") ? errorText(errorSignUp.find(error => error.type === "Phone")) : ""}
+                            </div>
+
                         </div>
 
                         <div className="flex flex-row gap-3">
                             {/** Password **/}
-                            <div className="relative">
-                                <input
-                                    type={showPasswordSignUp ? "text" : "password"}
-                                    placeholder="Password*"
-                                    className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-3 flex items-center"
-                                    onClick={() => setShowPasswordSignUp(!showPasswordSignUp)}
-                                >
-                                    {showPasswordSignUp ? <EyeOff size={20}/> : <Eye size={20}/>}
-                                </button>
+                            <div className="flex flex-col gap-1">
+                                <div className="relative">
+                                    <input
+                                        type={showPasswordSignUp ? "text" : "password"}
+                                        placeholder="Password*"
+                                        value={passwordSignUp} onChange={(e) => setPasswordSignUp(e.target.value)}
+                                        className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-3 flex items-center"
+                                        onClick={() => setShowPasswordSignUp(!showPasswordSignUp)}
+                                    >
+                                        {showPasswordSignUp ? <EyeOff size={20}/> : <Eye size={20}/>}
+                                    </button>
+                                </div>
+
+                                {errorSignUp.some(error => error.type === "Password") ? errorText(errorSignUp.find(error => error.type === "Password")) : ""}
                             </div>
 
                             {/** Confirm Password **/}
-                            <div className="relative">
-                                <input
-                                    type={showConfirmPasswordSignUp ? "text" : "password"}
-                                    placeholder="Confirm Password*"
-                                    className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-3 flex items-center"
-                                    onClick={() => setShowConfirmPasswordSignUp(!showConfirmPasswordSignUp)}
-                                >
-                                    {showConfirmPasswordSignUp ? <EyeOff size={20}/> : <Eye size={20}/>}
-                                </button>
+                            <div className="flex flex-col gap-1">
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmPasswordSignUp ? "text" : "password"}
+                                        placeholder="Confirm Password*"
+                                        value={confirmPasswordSignUp} onChange={(e) => setConfirmPasswordSignUp(e.target.value)}
+                                        className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-3 flex items-center"
+                                        onClick={() => setShowConfirmPasswordSignUp(!showConfirmPasswordSignUp)}
+                                    >
+                                        {showConfirmPasswordSignUp ? <EyeOff size={20}/> : <Eye size={20}/>}
+                                    </button>
+                                </div>
+
+                                {errorSignUp.some(error => error.type === "Confirm Password") ? errorText(errorSignUp.find(error => error.type === "Confirm Password")) : ""}
                             </div>
                         </div>
 
                         <div className="flex flex-row gap-[200px]">
                             {/** Next Button **/}
                             <button
-                                className="border bg-blue-400 w-[100px] border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                                className="border bg-blue-400 w-[100px] border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                                onClick={() => {validateResponses()}}
+                            >
                                 Next
                             </button>
 
