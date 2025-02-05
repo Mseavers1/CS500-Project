@@ -1,7 +1,6 @@
 import React from 'react';
 import './App.css';
 
-import homePage from "./components/HomePage";
 import HomePage from "./components/HomePage";
 
 function App() {
@@ -27,7 +26,7 @@ function App() {
     }
 
     return (
-        <div className="h-screen bg-background">
+        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
 
             {/** Header **/}
             {has_scrolled() ? header() : ""}
