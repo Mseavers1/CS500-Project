@@ -41,6 +41,7 @@ function HomePage() {
 
         // Validate Passwords
         validatePassword(passwordSignUp, confirmPasswordSignUp)
+
     }
 
     function validateEmail(email : string) {
@@ -49,10 +50,10 @@ function HomePage() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         // Check if empty
-        if (email == "") msg = "Please enter a email address.";
+        if (email === "") msg = "Please enter a email address.";
 
         // Check if is email address
-        else if (emailRegex.test(email)) msg = "Please enter a valid email address.";
+        else if (!emailRegex.test(email)) msg = "Please enter a valid email address.";
 
         // Check if taken
 
@@ -60,9 +61,8 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Email"};
-        setErrorSignUp([...errorSignUp, err]);
+        setErrorSignUp(prevState => [...prevState, err]);
 
-        errorSignUp.some(error => error.type === "Email") ? alert(errorSignUp.find(error => error.type === "Email")) : alert("")
 
     }
 
@@ -71,7 +71,7 @@ function HomePage() {
         let msg : string = "";
 
         // Check if empty
-        if (username == "") msg = "Please enter a username.";
+        if (username === "") msg = "Please enter a username.";
 
         // Check if there is a @ sign
         else if (username.includes('@')) msg = "Username can not have the @ symbol in it.";
@@ -85,7 +85,7 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Username"};
-        setErrorSignUp([...errorSignUp, err]);
+        setErrorSignUp(prevState => [...prevState, err]);
 
     }
 
@@ -93,11 +93,10 @@ function HomePage() {
         let msg : string = "";
         const phoneRegex = /^(?:\d{10}|\d{3}[-\s]?\d{3}[-\s]?\d{4})$/;
 
-        // Check if empty
-        if (phone == "") msg = "Please enter a phone number.";
+        if (phone === "") return;
 
         // Check if there are only numbers
-        else if (phoneRegex.test(phone)) msg = "Please enter a valid phone number.";
+        if (!phoneRegex.test(phone)) msg = "Please enter a valid phone number.";
 
         // Check if taken
 
@@ -105,7 +104,7 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Phone"};
-        setErrorSignUp([...errorSignUp, err]);
+        setErrorSignUp(prevState => [...prevState, err]);
     }
 
     function validatePassword(password : string, confirmPassword : string) {
@@ -116,45 +115,45 @@ function HomePage() {
         const numberRegex = /\d/;
 
         // Check if the confirmation password is empty
-        if (confirmPassword == "") {
+        if (confirmPassword === "") {
             msg = "Please enter a password";
             const err2 : IError = {message: msg, type: "Confirm Password"};
-            setErrorSignUp([...errorSignUp, err2]);
+            setErrorSignUp(prevState => [...prevState, err2]);
         }
 
         // Check if empty
-        if (password == "") msg = "Please enter a password.";
+        if (password === "") msg = "Please enter a password.";
 
         // Check if password has min length of 8
         else if (password.length < 8) msg = "Passwords must be at least 8 characters long.";
 
         // Check if contains 1 uppercase letter
-        else if (upperCaseRegex.test(password)) msg = "Passwords must have at least 1 uppercase letter.";
+        else if (!upperCaseRegex.test(password)) msg = "Passwords must have at least 1 uppercase letter.";
 
         // Check if contains 1 lowercase letter
-        else if (lowerCaseRegex.test(password)) msg = "Passwords must have at least 1 lowercase letter.";
+        else if (!lowerCaseRegex.test(password)) msg = "Passwords must have at least 1 lowercase letter.";
 
         // Check if contains 1 number
-        else if (numberRegex.test(password)) msg = "Passwords must have at least 1 number.";
+        else if (!numberRegex.test(password)) msg = "Passwords must have at least 1 number.";
 
         // Check if Passwords matches
         else if (password !== confirmPassword) {
             msg = "Passwords do not match.";
             const err2 : IError = {message: msg, type: "Confirm Password"};
-            setErrorSignUp([...errorSignUp, err2]);
+            setErrorSignUp(prevState => [...prevState, err2]);
         }
 
         // Return if no error
         else return;
 
         const err : IError = {message: msg, type: "Password"};
-        setErrorSignUp([...errorSignUp, err]);
+        setErrorSignUp(prevState => [...prevState, err]);
 
     }
 
     const errorText = (error : IError | undefined) => {
 
-        if (error == undefined) {
+        if (error === undefined) {
             return " "
         }
 
@@ -166,6 +165,13 @@ function HomePage() {
     }
 
     const signUp = () => {
+
+        function writeError(type : string) {
+
+            const emailError = errorSignUp.find(error => error.type === type);
+            return emailError ? errorText(emailError) : "";
+        }
+
         return (
             <div className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
@@ -175,9 +181,9 @@ function HomePage() {
                         {/** Email **/}
                         <div className="flex flex-col gap-1">
                             <input type="text" placeholder="Email*" value={emailSignUp} onChange={(e) => setEmailSignUp(e.target.value)}
-                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[460px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[730px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                            {errorSignUp.some(error => error.type === "Email") ? errorText(errorSignUp.find(error => error.type === "Email")) : ""}
+                            {writeError("Email")}
                         </div>
 
                         <div className="flex flex-row gap-3">
@@ -185,17 +191,17 @@ function HomePage() {
                             {/** Username **/}
                             <div className="flex flex-col gap-1">
                                 <input type="text" placeholder="Username*" value={usernameSignUp} onChange={(e) => setUsernameSignUp(e.target.value)}
-                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                                {errorSignUp.some(error => error.type === "Username") ? errorText(errorSignUp.find(error => error.type === "Username")) : ""}
+                                {writeError("Username")}
                             </div>
 
                             {/** Phone Number **/}
                             <div className="flex flex-col gap-1">
-                                <input type="tel" maxLength={10} placeholder="Phone Number" value={phoneSignUp} onChange={(e) => setPhoneSignUp(e.target.value)}
-                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[225px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                <input type="tel" maxLength={14} placeholder="Phone Number" value={phoneSignUp} onChange={(e) => setPhoneSignUp(e.target.value)}
+                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                                {errorSignUp.some(error => error.type === "Phone") ? errorText(errorSignUp.find(error => error.type === "Phone")) : ""}
+                                {writeError("Phone")}
                             </div>
 
                         </div>
@@ -208,7 +214,7 @@ function HomePage() {
                                         type={showPasswordSignUp ? "text" : "password"}
                                         placeholder="Password*"
                                         value={passwordSignUp} onChange={(e) => setPasswordSignUp(e.target.value)}
-                                        className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="border border-gray-300 rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
                                         type="button"
@@ -219,7 +225,7 @@ function HomePage() {
                                     </button>
                                 </div>
 
-                                {errorSignUp.some(error => error.type === "Password") ? errorText(errorSignUp.find(error => error.type === "Password")) : ""}
+                                {writeError("Password")}
                             </div>
 
                             {/** Confirm Password **/}
@@ -229,7 +235,7 @@ function HomePage() {
                                         type={showConfirmPasswordSignUp ? "text" : "password"}
                                         placeholder="Confirm Password*"
                                         value={confirmPasswordSignUp} onChange={(e) => setConfirmPasswordSignUp(e.target.value)}
-                                        className="border border-gray-300 rounded-lg w-[225px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="border border-gray-300 rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
                                         type="button"
@@ -240,7 +246,7 @@ function HomePage() {
                                     </button>
                                 </div>
 
-                                {errorSignUp.some(error => error.type === "Confirm Password") ? errorText(errorSignUp.find(error => error.type === "Confirm Password")) : ""}
+                                {writeError("Confirm Password")}
                             </div>
                         </div>
 
@@ -308,10 +314,10 @@ function HomePage() {
                         {/** Input Box **/}
                         <input
                             type="text"
-                            placeholder={selectedItem == "Email" ? "Enter your Phone Number" : "Enter your Email or Phone Number"}
-                            disabled={selectedItem == "Select Recovery Option"}
+                            placeholder={selectedItem === "Email" ? "Enter your Phone Number" : "Enter your Email or Phone Number"}
+                            disabled={selectedItem === "Select Recovery Option"}
                             className={`border rounded-lg px-5 py-2 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                ${selectedItem == "Select Recovery Option"
+                                ${selectedItem === "Select Recovery Option"
                                 ? "border-gray-300 bg-gray-100 cursor-not-allowed"
                                 : "border-blue-200 bg-white"}`}
                         />
