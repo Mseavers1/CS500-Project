@@ -1,5 +1,5 @@
 import {ChevronDown, ChevronUp, Eye, EyeOff} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 import IError from "./IError";
 
@@ -19,41 +19,112 @@ function HomePage() {
     const [passwordSignUp, setPasswordSignUp] = useState<string>("");
     const [confirmPasswordSignUp, setConfirmPasswordSignUp] = useState<string>("");
 
-    const [errorSignUp, setErrorSignUp] = useState<IError[]>([]);
+    const [loginField1, setLoginField1] = useState<string>("");
+    const [passwordLogin, setPasswordLogin] = useState<string>("");
 
-    function selectOption(option : string) {
+    const [errorSignUp, setErrorSignUp] = useState<IError[]>([]);
+    const [errorSignIn, setErrorSignIn] = useState<IError[]>([]);
+
+    function selectOption(option : string) : void {
         setSelectedItem(option);
         setShowRecoveryItems(false);
     }
 
-    function validateResponses(isSignUp : boolean = true) {
+    function validateResponses(setError: React.Dispatch<React.SetStateAction<IError[]>>, isSignUp : boolean = true) : void {
 
-        setErrorSignUp([])
+        setError([]);
 
-        // Validate Email
-        validateEmail(emailSignUp)
+        if (isSignUp) {
 
-        // Validate Username
-        validateUsername(usernameSignUp)
+            // Validate Email
+            validateEmail(emailSignUp, setError);
 
-        // Validate Phone
-        validatePhone(phoneSignUp)
+            // Validate Username
+            validateUsername(usernameSignUp, setError);
 
-        // Validate Passwords
-        validatePassword(passwordSignUp, confirmPasswordSignUp)
+            // Validate Phone
+            validatePhone(phoneSignUp, setError);
+
+            // Validate Passwords
+            validatePassword(passwordSignUp, confirmPasswordSignUp, setError);
+
+        } else {
+
+            // Validate field1
+            validateField(loginField1, passwordLogin, setError);
+        }
 
     }
 
-    function validateEmail(email : string) {
+    function validateField(field: string, password: string, setError: React.Dispatch<React.SetStateAction<IError[]>>) : void {
 
         let msg : string = "";
+        const numbersAndDashesRegex = /^[0-9-]+$/;
+
+        // Is field empty?
+        if (field === "") msg = "Cannot leave field blank."
+
+        // Figure out what type the first field is (phone, email, or username) then validate
+        else if (field.includes('@')) { // Email?
+
+            // Confirm valid email
+            if (!isEmail(field)) msg = "Please enter a valid email.";
+
+            // Confirm if email exist
+
+            // Confirm email and password matches
+
+        }
+
+        // Is Phone?
+        else if (numbersAndDashesRegex.test(field)) {
+
+            // Confirm valid phone
+            if (!isPhone(field)) msg = "Please enter a valid phone number.";
+
+            // Confirm if account exist with phone
+
+            // Confirm phone and password matches
+
+        }
+
+        // Must be a username
+        else {
+
+            // Confirm valid username
+            if (field.includes(' ')) msg = "Please enter a valid username.";
+
+            // Confirm if username exist in system
+
+            // Confirm if username and password matches
+
+        }
+
+        const err : IError = {message: msg, type: "Input"};
+        setError(prevState => [...prevState, err]);
+    }
+
+    function isPhone(phone: string): boolean {
+        const phoneRegex = /^(?:\d{10}|\d{3}[-\s]?\d{3}[-\s]?\d{4})$/;
+
+        return phoneRegex.test(phone);
+    }
+
+    function isEmail(email: string): boolean {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        return emailRegex.test(email);
+    }
+
+    function validateEmail(email : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
+
+        let msg : string = "";
 
         // Check if empty
         if (email === "") msg = "Please enter a email address.";
 
         // Check if is email address
-        else if (!emailRegex.test(email)) msg = "Please enter a valid email address.";
+        else if (!isEmail(email)) msg = "Please enter a valid email address.";
 
         // Check if taken
 
@@ -61,20 +132,24 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Email"};
-        setErrorSignUp(prevState => [...prevState, err]);
+        setError(prevState => [...prevState, err]);
 
 
     }
 
-    function validateUsername(username : string) {
+    function validateUsername(username : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
 
         let msg : string = "";
+        const numbersAndDashesRegex = /^[0-9-]+$/;
 
         // Check if empty
         if (username === "") msg = "Please enter a username.";
 
         // Check if there is a @ sign
         else if (username.includes('@')) msg = "Username can not have the @ symbol in it.";
+
+        // Check if there is only numbers
+        else if (numbersAndDashesRegex.test(username)) msg = "Username must have at least 1 non-numerical or - character.";
 
         // Check if there is any spaces
         else if (username.includes(' ')) msg = "Username can not have any spaces in it.";
@@ -85,18 +160,17 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Username"};
-        setErrorSignUp(prevState => [...prevState, err]);
+        setError(prevState => [...prevState, err]);
 
     }
 
-    function validatePhone(phone : string) {
+    function validatePhone(phone : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
         let msg : string = "";
-        const phoneRegex = /^(?:\d{10}|\d{3}[-\s]?\d{3}[-\s]?\d{4})$/;
 
         if (phone === "") return;
 
         // Check if there are only numbers
-        if (!phoneRegex.test(phone)) msg = "Please enter a valid phone number.";
+        if (!isPhone(phone)) msg = "Please enter a valid phone number.";
 
         // Check if taken
 
@@ -104,10 +178,15 @@ function HomePage() {
         else return;
 
         const err : IError = {message: msg, type: "Phone"};
-        setErrorSignUp(prevState => [...prevState, err]);
+        setError(prevState => [...prevState, err]);
     }
 
-    function validatePassword(password : string, confirmPassword : string) {
+    function writeError(type : string, getError: IError[]) {
+        const err = getError.find(error => error.type === type);
+        return err ? errorText(err) : "";
+    }
+
+    function validatePassword(password : string, confirmPassword : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
 
         let msg : string = "";
         const upperCaseRegex = /[A-Z]/;
@@ -118,7 +197,7 @@ function HomePage() {
         if (confirmPassword === "") {
             msg = "Please enter a password";
             const err2 : IError = {message: msg, type: "Confirm Password"};
-            setErrorSignUp(prevState => [...prevState, err2]);
+            setError(prevState => [...prevState, err2]);
         }
 
         // Check if empty
@@ -140,14 +219,14 @@ function HomePage() {
         else if (password !== confirmPassword) {
             msg = "Passwords do not match.";
             const err2 : IError = {message: msg, type: "Confirm Password"};
-            setErrorSignUp(prevState => [...prevState, err2]);
+            setError(prevState => [...prevState, err2]);
         }
 
         // Return if no error
         else return;
 
         const err : IError = {message: msg, type: "Password"};
-        setErrorSignUp(prevState => [...prevState, err]);
+        setError(prevState => [...prevState, err]);
 
     }
 
@@ -166,12 +245,6 @@ function HomePage() {
 
     const signUp = () => {
 
-        function writeError(type : string) {
-
-            const emailError = errorSignUp.find(error => error.type === type);
-            return emailError ? errorText(emailError) : "";
-        }
-
         return (
             <div className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
@@ -183,7 +256,7 @@ function HomePage() {
                             <input type="text" placeholder="Email*" value={emailSignUp} onChange={(e) => setEmailSignUp(e.target.value)}
                                    className="border border-gray-300 rounded-lg px-5 py-2 w-[730px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                            {writeError("Email")}
+                            {writeError("Email", errorSignUp)}
                         </div>
 
                         <div className="flex flex-row gap-3">
@@ -193,7 +266,7 @@ function HomePage() {
                                 <input type="text" placeholder="Username*" value={usernameSignUp} onChange={(e) => setUsernameSignUp(e.target.value)}
                                        className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                                {writeError("Username")}
+                                {writeError("Username", errorSignUp)}
                             </div>
 
                             {/** Phone Number **/}
@@ -201,7 +274,7 @@ function HomePage() {
                                 <input type="tel" maxLength={14} placeholder="Phone Number" value={phoneSignUp} onChange={(e) => setPhoneSignUp(e.target.value)}
                                        className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                                {writeError("Phone")}
+                                {writeError("Phone", errorSignUp)}
                             </div>
 
                         </div>
@@ -225,7 +298,7 @@ function HomePage() {
                                     </button>
                                 </div>
 
-                                {writeError("Password")}
+                                {writeError("Password", errorSignUp)}
                             </div>
 
                             {/** Confirm Password **/}
@@ -246,7 +319,7 @@ function HomePage() {
                                     </button>
                                 </div>
 
-                                {writeError("Confirm Password")}
+                                {writeError("Confirm Password", errorSignUp)}
                             </div>
                         </div>
 
@@ -254,7 +327,7 @@ function HomePage() {
                             {/** Next Button **/}
                             <button
                                 className="border bg-blue-400 w-[100px] border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                                onClick={() => {validateResponses()}}
+                                onClick={() => {validateResponses(setErrorSignUp)}}
                             >
                                 Next
                             </button>
@@ -363,22 +436,33 @@ function HomePage() {
             {showSignUp && (signUp())}
 
             <div className="font-poppins flex flex-col p-5 gap-4">
-            <input type="text" placeholder="Email or Username"
-                       className="border border-gray-300 rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-                <div className="relative">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        className="border border-gray-300 rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                        type="button"
-                        className="absolute inset-y-0 right-3 flex items-center"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
-                    </button>
+                <div className="flex flex-col gap-1">
+                    <input type="text" placeholder="Email, Username or Phone Number"
+                           value={loginField1} onChange={(e) => setLoginField1(e.target.value)}
+                           className="border border-gray-300 rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+                    {writeError("Input", errorSignIn)}
+                </div>
+
+
+                <div className="flex flex-col gap-3">
+                    <div className="relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            className="border border-gray-300 rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            type="button"
+                            className="absolute inset-y-0 right-3 flex items-center"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
+                        </button>
+                    </div>
+
+                    {}
                 </div>
 
                 <div className="flex flex-row justify-between -mt-3">
@@ -394,7 +478,8 @@ function HomePage() {
                 </div>
 
                 <button
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    onClick={() => validateResponses(setErrorSignIn, false)}>
                     Login
                 </button>
 
