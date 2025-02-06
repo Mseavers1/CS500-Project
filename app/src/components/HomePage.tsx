@@ -61,6 +61,9 @@ function HomePage() {
 
         const err : IError = {message: msg, type: "Email"};
         setErrorSignUp([...errorSignUp, err]);
+
+        errorSignUp.some(error => error.type === "Email") ? alert(errorSignUp.find(error => error.type === "Email")) : alert("")
+
     }
 
     function validateUsername(username : string) {
