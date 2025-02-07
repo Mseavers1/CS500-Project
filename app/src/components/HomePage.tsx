@@ -2,6 +2,7 @@ import {ChevronDown, ChevronUp, Eye, EyeOff} from "lucide-react";
 import React, {useEffect, useRef, useState} from "react";
 
 import IError from "./IError";
+import axios from "axios";
 
 function HomePage() {
 
@@ -24,6 +25,10 @@ function HomePage() {
 
     const [errorSignUp, setErrorSignUp] = useState<IError[]>([]);
     const [errorSignIn, setErrorSignIn] = useState<IError[]>([]);
+
+    useEffect(() => {
+        axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
+    }, [loginField1]);
 
     function selectOption(option : string) : void {
         setSelectedItem(option);
