@@ -64,10 +64,15 @@ function HomePage() {
     function validateField(field: string, password: string, setError: React.Dispatch<React.SetStateAction<IError[]>>) : void {
 
         let msg : string = "";
+        let p_msg : string = "";
+
         const numbersAndDashesRegex = /^[0-9-]+$/;
 
+        // Is password empty?
+        if (password === "") p_msg = "Cannot leave password empty."
+
         // Is field empty?
-        if (field === "") msg = "Cannot leave field blank."
+        if (field === "") msg = "Cannot leave field empty."
 
         // Figure out what type the first field is (phone, email, or username) then validate
         else if (field.includes('@')) { // Email?
@@ -105,8 +110,13 @@ function HomePage() {
 
         }
 
+        // Input
         const err : IError = {message: msg, type: "Input"};
         setError(prevState => [...prevState, err]);
+
+        // Password
+        const p_err : IError = {message: p_msg, type: "Input Password"};
+        setError(prevState => [...prevState, p_err]);
     }
 
     function isPhone(phone: string): boolean {
@@ -237,12 +247,12 @@ function HomePage() {
 
     const errorText = (error : IError | undefined) => {
 
-        if (error === undefined) {
-            return " "
+        if (error === undefined || error.message === "") {
+            return ""
         }
 
         return (
-            <p className="font-poppins text-red-500 text-sm text-left self-start italic pl-5">
+            <p className="font-poppins text-red-500 text-sm text-left self-start pl-5">
                 {error.message}
             </p>
         )
@@ -259,7 +269,7 @@ function HomePage() {
                         {/** Email **/}
                         <div className="flex flex-col gap-1">
                             <input type="text" placeholder="Email*" value={emailSignUp} onChange={(e) => setEmailSignUp(e.target.value)}
-                                   className="border border-gray-300 rounded-lg px-5 py-2 w-[730px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                   className={`border ${writeError("Email", errorSignUp) == "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[730px] focus:outline-none focus:ring-2 focus:ring-blue-500`}/>
 
                             {writeError("Email", errorSignUp)}
                         </div>
@@ -269,7 +279,7 @@ function HomePage() {
                             {/** Username **/}
                             <div className="flex flex-col gap-1">
                                 <input type="text" placeholder="Username*" value={usernameSignUp} onChange={(e) => setUsernameSignUp(e.target.value)}
-                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                       className={`border ${writeError("Username", errorSignUp) == "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500`}/>
 
                                 {writeError("Username", errorSignUp)}
                             </div>
@@ -277,7 +287,7 @@ function HomePage() {
                             {/** Phone Number **/}
                             <div className="flex flex-col gap-1">
                                 <input type="tel" maxLength={14} placeholder="Phone Number" value={phoneSignUp} onChange={(e) => setPhoneSignUp(e.target.value)}
-                                       className="border border-gray-300 rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                       className={`border ${writeError("Phone", errorSignUp) == "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[360px] focus:outline-none focus:ring-2 focus:ring-blue-500`}/>
 
                                 {writeError("Phone", errorSignUp)}
                             </div>
@@ -289,10 +299,11 @@ function HomePage() {
                             <div className="flex flex-col gap-1">
                                 <div className="relative">
                                     <input
+                                        id="password-signup"
                                         type={showPasswordSignUp ? "text" : "password"}
                                         placeholder="Password*"
                                         value={passwordSignUp} onChange={(e) => setPasswordSignUp(e.target.value)}
-                                        className="border border-gray-300 rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className={`border ${writeError("Password", errorSignUp) == "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                                     />
                                     <button
                                         type="button"
@@ -309,11 +320,11 @@ function HomePage() {
                             {/** Confirm Password **/}
                             <div className="flex flex-col gap-1">
                                 <div className="relative">
-                                    <input
+                                <input
                                         type={showConfirmPasswordSignUp ? "text" : "password"}
                                         placeholder="Confirm Password*"
                                         value={confirmPasswordSignUp} onChange={(e) => setConfirmPasswordSignUp(e.target.value)}
-                                        className="border border-gray-300 rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className={`border ${writeError("Confirm Password", errorSignUp) == "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[360px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                                     />
                                     <button
                                         type="button"
@@ -445,18 +456,18 @@ function HomePage() {
                 <div className="flex flex-col gap-1">
                     <input type="text" placeholder="Email, Username or Phone Number"
                            value={loginField1} onChange={(e) => setLoginField1(e.target.value)}
-                           className="border border-gray-300 rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                           className={`border ${writeError("Input", errorSignIn) == "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500`}/>
 
                     {writeError("Input", errorSignIn)}
                 </div>
 
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
                     <div className="relative">
                         <input
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
-                            className="border border-gray-300 rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className={`border ${writeError("Input Password", errorSignIn) == "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         />
                         <button
                             type="button"
@@ -467,7 +478,7 @@ function HomePage() {
                         </button>
                     </div>
 
-                    {}
+                    {writeError("Input Password", errorSignIn)}
                 </div>
 
                 <div className="flex flex-row justify-between -mt-3">
