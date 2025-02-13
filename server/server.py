@@ -4,6 +4,7 @@ from database import Database
 
 from models.user_create_model import UserCreate
 from models.user_exists_model import UserExists
+from models.user_login_model import UserLogin
 
 
 # How to run server, use this in console: uvicorn server:app --reload
@@ -38,6 +39,20 @@ class ServerAPI:
         @self.app.get("/api/data")
         def get_data():
             return {"data": "This is data from the backend"}
+
+        @self.app.get("/api/users/login/")
+        async def user_login(user: UserLogin):
+
+            # Check if parameters are empty
+            if not any([user.email, user.username, user.phone]):
+                raise HTTPException(status_code=400, detail="At least one field must be provided")
+
+            user = await self.database.validate_login(user.password, user.email, user.username, user.phone)
+
+            if user is not None:
+                return {"message": f"Login Successful."}
+
+            return {"message": "Login Failed."}
 
         @self.app.get("/api/users/")
         async def user_exists(user: UserExists):

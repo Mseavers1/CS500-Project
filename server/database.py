@@ -67,19 +67,13 @@ class Database:
     async def validate_login(self, password: str, email: str = "", username: str = "", phone: str = ""):
 
         # Get user
-        user = self.get_user(username=username, phone=phone, email=email)
+        user = await self.get_user(username=username, phone=phone, email=email)
 
         # If user was not found
         if user is None:
             return None
 
-        # Hash Password
-        password = hash_data(password)
-
-        # Check if passwords match
-        c_password = user["user_password"]
-
-        if c_password == password:
+        if bcrypt.checkpw(password.encode(), user["user_password"].encode()):
             return user
         else:
             return None
@@ -94,14 +88,25 @@ class Database:
 
             result = await session.execute(query)
             users = result.scalars().all()  # Fetch all potential matches
+            u = None
 
             for user in users:
                 if email and self.decrypt_data(user.user_email) == email:
-                    return user
+                    u = user
                 if phone and self.decrypt_data(user.user_phone) == phone:
-                    return user
+                    u = user
                 if username and self.decrypt_data(user.user_username) == username:
-                    return user
+                    u = user
+
+            if u:
+                return {
+                    "user_email": self.decrypt_data(user.user_email),
+                    "user_username": self.decrypt_data(user.user_username),
+                    "user_password": user.user_password,
+                    "user_phone": self.decrypt_data(user.user_phone),
+                    "user_type": user.user_type
+                }
+
 
             return None  # No match found
 
