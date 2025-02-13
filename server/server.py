@@ -15,6 +15,10 @@ class ServerAPI:
         self.setup_routes()
         self.database = Database()
 
+        @self.app.on_event("startup")
+        async def startup():
+            await self.database.create_tables()
+
     # CORES
     def setup_cors(self):
         self.app.add_middleware(
@@ -36,18 +40,26 @@ class ServerAPI:
             return {"data": "This is data from the backend"}
 
         @self.app.get("/api/users/")
-        def user_exists(user: UserExists):
+        async def user_exists(user: UserExists):
 
-            if not any([user.user_id, user.email, user.username, user.password, user.phone, user.user_type]):
+            # Check if parameters are empty
+            if not any([user.user_id, user.email, user.username, user.phone]):
                 raise HTTPException(status_code=400, detail="At least one field must be provided")
 
-            return {"exists": self.database.user_exists(user.email, user.username, user.password, user.phone,
-                                                        user.user_type, user.user_id)}
+            # Attempt to look up user
+            user = await self.database.get_user(user_id=user.user_id, email=user.email, phone=user.phone,
+                                                username=user.username)
+
+            if user is not None:
+                return {"message": f"Found User"}
+
+            return {"message": "User does not exist"}
 
         @self.app.post("/api/users/")
-        def create_user(user: UserCreate):
+        async def create_user(user: UserCreate):
             try:
-                self.database.create_user(user.email, user.username, user.password, user.user_type, user.phone)
+                # Await the asynchronous add_user function
+                await self.database.add_user(user.email, user.username, user.password, user.phone, user.user_type)
 
                 return {"message": "User created successfully"}
             except Exception as e:
