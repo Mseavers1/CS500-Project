@@ -32,15 +32,8 @@ class ServerAPI:
 
     # Routes
     def setup_routes(self):
-        @self.app.get("/")
-        def read_root():
-            return {"message": "Hello from FastAPI!"}
 
-        @self.app.get("/api/data")
-        def get_data():
-            return {"data": "This is data from the backend"}
-
-        @self.app.get("/api/users/login/")
+        @self.app.post("/api/users/login/")
         async def user_login(user: UserLogin):
 
             # Check if parameters are empty

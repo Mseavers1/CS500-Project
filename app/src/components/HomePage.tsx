@@ -61,18 +61,22 @@ function HomePage() {
 
     }
 
-    function validateField(field: string, password: string, setError: React.Dispatch<React.SetStateAction<IError[]>>) : void {
+    async function validateField(field: string, password: string, setError: React.Dispatch<React.SetStateAction<IError[]>>): Promise<void> {
 
-        let msg : string = "";
-        let p_msg : string = "";
+        let msg: string = "";
+        let p_msg: string = "";
+
+        let l_email = "";
+        let l_phone = "";
+        let l_username = "";
 
         const numbersAndDashesRegex = /^[0-9-]+$/;
 
         // Is password empty?
-        if (password === "") p_msg = "Cannot leave password empty."
+        if (password === "") p_msg = "Cannot leave password empty.";
 
         // Is field empty?
-        if (field === "") msg = "Cannot leave field empty."
+        if (field === "") msg = "Cannot leave field empty.";
 
         // Figure out what type the first field is (phone, email, or username) then validate
         else if (field.includes('@')) { // Email?
@@ -82,8 +86,8 @@ function HomePage() {
 
             // Confirm if email exist
 
-            // Confirm email and password matches
-
+            // Set email
+            l_email = field;
         }
 
         // Is Phone?
@@ -94,7 +98,8 @@ function HomePage() {
 
             // Confirm if account exist with phone
 
-            // Confirm phone and password matches
+            // Set phone
+            l_phone = field;
 
         }
 
@@ -106,16 +111,27 @@ function HomePage() {
 
             // Confirm if username exist in system
 
-            // Confirm if username and password matches
+            // Set username
+            l_username = field;
 
         }
 
+        // Attempt to login
+        let success = await login(l_email, l_phone, l_username);
+
+        if (success?.data.message === "Login Successful.") {
+            alert("successfully logged in!");
+            return;
+        }
+
+        alert("failed logged in!");
+
         // Input
-        const err : IError = {message: msg, type: "Input"};
+        const err: IError = {message: msg, type: "Input"};
         setError(prevState => [...prevState, err]);
 
         // Password
-        const p_err : IError = {message: p_msg, type: "Input Password"};
+        const p_err: IError = {message: p_msg, type: "Input Password"};
         setError(prevState => [...prevState, p_err]);
     }
 
@@ -244,6 +260,25 @@ function HomePage() {
         setError(prevState => [...prevState, err]);
 
     }
+
+    const login = async (email: string = "", phone: string = "", username: string = "") => {
+
+        if (!email && !phone && !username) throw new Error("Requires email, username, or phone.");
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:8000/api/users/login/",
+                { email:  email, username: username, phone: phone, password: passwordLogin},
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            alert("Response:" + response.data);
+            return response;
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    };
 
     const errorText = (error : IError | undefined) => {
 
@@ -467,6 +502,7 @@ function HomePage() {
                         <input
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
+                            value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)}
                             className={`border ${writeError("Input Password", errorSignIn) == "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         />
                         <button
