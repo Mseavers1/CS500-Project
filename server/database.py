@@ -93,8 +93,11 @@ class Database:
             for user in users:
                 if email and self.decrypt_data(user.user_email) == email:
                     u = user
-                if phone and self.decrypt_data(user.user_phone) == phone:
-                    u = user
+                if phone is not None:
+                    if user.user_phone is None:
+                        continue
+                    elif self.decrypt_data(user.user_phone) == phone:
+                        u = user
                 if username and self.decrypt_data(user.user_username) == username:
                     u = user
 
@@ -111,12 +114,14 @@ class Database:
             return None  # No match found
 
     # Adds a user to the User table
-    async def add_user(self, email: str, username: str, password: str, phone: str, u_type: str = 'student'):
+    async def add_user(self, email: str, username: str, password: str, phone: str or None, u_type: str = 'student'):
 
         # Encrypt data
         email = self.encrypt_data(email)
         username = self.encrypt_data(username)
-        phone = self.encrypt_data(phone)
+
+        if phone is not None:
+            phone = self.encrypt_data(phone)
 
         # Hash data
         password = hash_data(password)
@@ -130,6 +135,11 @@ class Database:
             user_type=u_type
         )
 
-        async with self.get_db() as session:
-            session.add(new_user)
-            await session.commit()
+        try:
+            async with self.get_db() as session:
+                session.add(new_user)
+                await session.commit()
+            return {"message": "User created successfully!", "user_id": new_user.id}
+
+        except Exception as e:
+            return {"error": "An unexpected error occurred.", "details": str(e)}

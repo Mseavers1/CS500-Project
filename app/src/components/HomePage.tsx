@@ -35,23 +35,36 @@ function HomePage() {
         setShowRecoveryItems(false);
     }
 
-    function validateResponses(setError: React.Dispatch<React.SetStateAction<IError[]>>, isSignUp : boolean = true) : void {
+    async function validateResponses(setError: React.Dispatch<React.SetStateAction<IError[]>>, isSignUp : boolean = true) {
 
         setError([]);
 
         if (isSignUp) {
 
             // Validate Email
-            validateEmail(emailSignUp, setError);
+            const e1 = validateEmail(emailSignUp, setError);
 
             // Validate Username
-            validateUsername(usernameSignUp, setError);
+            const e2 = validateUsername(usernameSignUp, setError);
 
             // Validate Phone
-            validatePhone(phoneSignUp, setError);
+            const e3 = validatePhone(phoneSignUp, setError);
 
             // Validate Passwords
-            validatePassword(passwordSignUp, confirmPasswordSignUp, setError);
+            const e4 = validatePassword(passwordSignUp, confirmPasswordSignUp, setError);
+
+            // If no errors, Create an account
+            if (!e1 && !e2 && (!e3 || undefined) && !e4) {
+
+                let success = await register(emailSignUp, usernameSignUp, passwordSignUp, "student", phoneSignUp);
+
+                if (success?.data.message === "User created successfully!") {
+                    alert("successfully created an account!");
+                    return;
+                }
+
+                alert("failed creating an account!");
+            }
 
         } else {
 
@@ -116,15 +129,19 @@ function HomePage() {
 
         }
 
-        // Attempt to login
-        let success = await login(l_email, l_phone, l_username);
+        // Attempt to login if no errors
+        if (msg === "" && p_msg === "") {
+            let success = await login(l_email, l_phone, l_username);
 
-        if (success?.data.message === "Login Successful.") {
-            alert("successfully logged in!");
-            return;
+            if (success?.data.message === "Login Successful.") {
+                alert("successfully logged in!");
+                return;
+            }
+
+            // If error, set error messages
+            msg = "Incorrect email or password."
+            p_msg = msg;
         }
-
-        alert("failed logged in!");
 
         // Input
         const err: IError = {message: msg, type: "Input"};
@@ -147,7 +164,7 @@ function HomePage() {
         return emailRegex.test(email);
     }
 
-    function validateEmail(email : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
+    async function validateEmail(email : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
 
         let msg : string = "";
 
@@ -158,14 +175,15 @@ function HomePage() {
         else if (!isEmail(email)) msg = "Please enter a valid email address.";
 
         // Check if taken
+        else if (await checkIfExist()) msg = "This email address is already taken."
 
         // Return if no error
-        else return;
+        else return false;
 
         const err : IError = {message: msg, type: "Email"};
         setError(prevState => [...prevState, err]);
 
-
+        return true;
     }
 
     function validateUsername(username : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
@@ -188,11 +206,12 @@ function HomePage() {
         // Check if taken
 
         // Return if no error
-        else return;
+        else return false;
 
         const err : IError = {message: msg, type: "Username"};
         setError(prevState => [...prevState, err]);
 
+        return true;
     }
 
     function validatePhone(phone : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
@@ -206,10 +225,12 @@ function HomePage() {
         // Check if taken
 
         // Return if no error
-        else return;
+        else return false;
 
         const err : IError = {message: msg, type: "Phone"};
         setError(prevState => [...prevState, err]);
+
+        return true;
     }
 
     function writeError(type : string, getError: IError[]) {
@@ -254,10 +275,12 @@ function HomePage() {
         }
 
         // Return if no error
-        else return;
+        else return false;
 
         const err : IError = {message: msg, type: "Password"};
         setError(prevState => [...prevState, err]);
+
+        return true;
 
     }
 
@@ -268,7 +291,7 @@ function HomePage() {
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/users/login/",
-                { email:  email, username: username, phone: phone, password: passwordLogin},
+                { email: email, username: username, phone: phone, password: passwordLogin},
                 { headers: { "Content-Type": "application/json" } }
             );
 
@@ -279,6 +302,33 @@ function HomePage() {
             return null;
         }
     };
+
+    const checkIfExist = async () => {
+
+        
+
+
+        return false;
+    }
+
+    const register = async (email: string, username: string, password: string, user_type: string = "student", phone: string = "") => {
+
+        if (!email && !username && !password) throw new Error("Requires email, username, and a password.");
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:8000/api/users/register/",
+                { email: email, username: username, phone: phone, password: password, user_type: user_type },
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            alert("Response:" + response.data);
+            return response;
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
 
     const errorText = (error : IError | undefined) => {
 

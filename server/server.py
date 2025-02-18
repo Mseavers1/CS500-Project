@@ -5,6 +5,7 @@ from database import Database
 from models.user_create_model import UserCreate
 from models.user_exists_model import UserExists
 from models.user_login_model import UserLogin
+from models.user_register_model import UserRegister
 
 
 # How to run server, use this in console: uvicorn server:app --reload
@@ -47,6 +48,24 @@ class ServerAPI:
 
             return {"message": "Login Failed."}
 
+        @self.app.post("/api/users/register/")
+        async def user_register(user: UserRegister):
+
+            # Check if parameters are empty
+            if not ([user.email, user.username, user.password, user.user_type]):
+                raise HTTPException(status_code=400, detail="All fields must not be left blank except phone number.")
+
+            if user.phone == "":
+                user.phone = None
+
+            msg = await self.database.add_user(user.email, user.username, user.password, user.phone, user.user_type)
+
+            if "message" in msg:
+                return msg
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred during registration.")
+
         @self.app.get("/api/users/")
         async def user_exists(user: UserExists):
 
@@ -62,16 +81,6 @@ class ServerAPI:
                 return {"message": f"Found User"}
 
             return {"message": "User does not exist"}
-
-        @self.app.post("/api/users/")
-        async def create_user(user: UserCreate):
-            try:
-                # Await the asynchronous add_user function
-                await self.database.add_user(user.email, user.username, user.password, user.phone, user.user_type)
-
-                return {"message": "User created successfully"}
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
 
 
 # Requires to be outside for FastAPI
