@@ -42,13 +42,13 @@ function HomePage() {
         if (isSignUp) {
 
             // Validate Email
-            const e1 = validateEmail(emailSignUp, setError);
+            const e1 = await validateEmail(emailSignUp.toLowerCase(), setError);
 
             // Validate Username
-            const e2 = validateUsername(usernameSignUp, setError);
+            const e2 = await validateUsername(usernameSignUp.toLowerCase(), setError);
 
             // Validate Phone
-            const e3 = validatePhone(phoneSignUp, setError);
+            const e3 = await validatePhone(phoneSignUp, setError);
 
             // Validate Passwords
             const e4 = validatePassword(passwordSignUp, confirmPasswordSignUp, setError);
@@ -56,20 +56,30 @@ function HomePage() {
             // If no errors, Create an account
             if (!e1 && !e2 && (!e3 || undefined) && !e4) {
 
-                let success = await register(emailSignUp, usernameSignUp, passwordSignUp, "student", phoneSignUp);
+                let success = await register(emailSignUp.toLowerCase(), usernameSignUp.toLowerCase(), passwordSignUp, "student", phoneSignUp);
 
+                // Successfully created an account
                 if (success?.data.message === "User created successfully!") {
                     alert("successfully created an account!");
+                    setShowSignUp(false);
+                    setEmailSignUp("");
+                    setUsernameSignUp("");
+                    setPasswordSignUp("");
+                    setConfirmPasswordSignUp("");
+                    setPhoneSignUp("");
                     return;
                 }
 
-                alert("failed creating an account!");
+                // Unknown error occurred
+                const err : IError = {message: "An unknown error has occurred", type: "Email"};
+                const err2 : IError = {message: "An unknown error has occurred", type: "Password"};
+                setError(prevState => [...prevState, err, err2]);
             }
 
         } else {
 
             // Validate field1
-            validateField(loginField1, passwordLogin, setError);
+            await validateField(loginField1, passwordLogin, setError);
         }
 
     }
@@ -97,8 +107,6 @@ function HomePage() {
             // Confirm valid email
             if (!isEmail(field)) msg = "Please enter a valid email.";
 
-            // Confirm if email exist
-
             // Set email
             l_email = field;
         }
@@ -108,8 +116,6 @@ function HomePage() {
 
             // Confirm valid phone
             if (!isPhone(field)) msg = "Please enter a valid phone number.";
-
-            // Confirm if account exist with phone
 
             // Set phone
             l_phone = field;
@@ -122,8 +128,6 @@ function HomePage() {
             // Confirm valid username
             if (field.includes(' ')) msg = "Please enter a valid username.";
 
-            // Confirm if username exist in system
-
             // Set username
             l_username = field;
 
@@ -131,7 +135,7 @@ function HomePage() {
 
         // Attempt to login if no errors
         if (msg === "" && p_msg === "") {
-            let success = await login(l_email, l_phone, l_username);
+            let success = await login(l_email.toLowerCase(), l_phone, l_username.toLowerCase());
 
             if (success?.data.message === "Login Successful.") {
                 alert("successfully logged in!");
@@ -175,7 +179,7 @@ function HomePage() {
         else if (!isEmail(email)) msg = "Please enter a valid email address.";
 
         // Check if taken
-        else if (await checkIfExist()) msg = "This email address is already taken."
+        else if ((await checkIfExist("", email))) msg = "This email address is already taken."
 
         // Return if no error
         else return false;
@@ -186,7 +190,7 @@ function HomePage() {
         return true;
     }
 
-    function validateUsername(username : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
+    async function validateUsername(username : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
 
         let msg : string = "";
         const numbersAndDashesRegex = /^[0-9-]+$/;
@@ -204,6 +208,7 @@ function HomePage() {
         else if (username.includes(' ')) msg = "Username can not have any spaces in it.";
 
         // Check if taken
+        else if ((await checkIfExist(username))) msg = "This username is already taken."
 
         // Return if no error
         else return false;
@@ -214,7 +219,7 @@ function HomePage() {
         return true;
     }
 
-    function validatePhone(phone : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
+    async function validatePhone(phone : string, setError: React.Dispatch<React.SetStateAction<IError[]>>) {
         let msg : string = "";
 
         if (phone === "") return;
@@ -223,6 +228,7 @@ function HomePage() {
         if (!isPhone(phone)) msg = "Please enter a valid phone number.";
 
         // Check if taken
+        else if ((await checkIfExist("", "", phone))) msg = "This phone number is already taken."
 
         // Return if no error
         else return false;
@@ -303,10 +309,44 @@ function HomePage() {
         }
     };
 
-    const checkIfExist = async () => {
+    const checkIfExist = async (username : string = "", email : string = "", phone : string = "") => {
 
-        
+        if (username === "" && email === "" && phone === "") return false;
 
+        // Check if they exist
+        try {
+            let response;
+
+            if (username) {
+                response = await axios.post(
+                    "http://127.0.0.1:8000/api/users/",
+                    { username: username},
+                    { headers: { "Content-Type": "application/json" } }
+                );
+            }
+            else if (email) {
+                response = await axios.post(
+                    "http://127.0.0.1:8000/api/users/",
+                    { email: email},
+                    { headers: { "Content-Type": "application/json" } }
+                );
+            }
+            else {
+                response = await axios.post(
+                    "http://127.0.0.1:8000/api/users/",
+                    { phone: phone},
+                    { headers: { "Content-Type": "application/json" } }
+                );
+            }
+
+            if (response && response.data.found_user) {
+                return true;
+            }
+        }
+        catch (e) {
+            alert("Error:" + e);
+            return false;
+        }
 
         return false;
     }

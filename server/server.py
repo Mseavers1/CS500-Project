@@ -66,6 +66,22 @@ class ServerAPI:
             # If there’s an unexpected failure
             raise HTTPException(status_code=500, detail="An unexpected error occurred during registration.")
 
+        @self.app.post("/api/users/")
+        async def user_exist_post(user: UserExists):
+
+            # Check if parameters are empty
+            if not any([user.user_id, user.email, user.username, user.phone]):
+                raise HTTPException(status_code=400, detail="At least one field must be provided")
+
+            # Attempt to look up user
+            user = await self.database.get_user(user_id=user.user_id, email=user.email, phone=user.phone,
+                                                username=user.username)
+
+            if user is not None:
+                return {"found_user": True}
+
+            return {"founder_user": False}
+
         @self.app.get("/api/users/")
         async def user_exists(user: UserExists):
 
