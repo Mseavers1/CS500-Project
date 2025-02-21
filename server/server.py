@@ -1,11 +1,18 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import Database
+from models.email_model import EmailSend
 
 from models.user_create_model import UserCreate
 from models.user_exists_model import UserExists
 from models.user_login_model import UserLogin
 from models.user_register_model import UserRegister
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 # How to run server, use this in console: uvicorn server:app --reload
@@ -81,6 +88,42 @@ class ServerAPI:
                 return {"found_user": True}
 
             return {"founder_user": False}
+
+        @self.app.post("/api/email/")
+        async def send_email(email: EmailSend):
+
+            # Check if parameters are empty
+            if not ([email.emailTo, email.subject, email.body]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            em = os.getenv("EMAIL_ADDRESS")
+
+            # Create Email Message
+            msg = MIMEMultipart()
+            msg["From"] = f"M.A.P <{em}>"
+            msg["To"] = email.emailTo
+            msg["Subject"] = email.subject
+            msg.attach(MIMEText(email.body, "html"))
+
+            success = False
+
+            try:
+                # Connect to SMTP Server
+                smtp_server = smtplib.SMTP(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT")))
+                smtp_server.starttls()
+                smtp_server.login(em, os.getenv("GMAIL_CODE"))
+
+                # Send Email
+                smtp_server.sendmail(em, email.emailTo, msg.as_string())
+
+                print("Email sent successfully!")
+                success = True
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                smtp_server.quit()
+
+            return {"success": success}
 
         @self.app.get("/api/users/")
         async def user_exists(user: UserExists):

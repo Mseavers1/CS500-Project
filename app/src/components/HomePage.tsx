@@ -26,6 +26,8 @@ function HomePage() {
     const [errorSignUp, setErrorSignUp] = useState<IError[]>([]);
     const [errorSignIn, setErrorSignIn] = useState<IError[]>([]);
 
+    const [recoveryField, setRecoveryField] = useState<string>("");
+
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
     }, [loginField1]);
@@ -489,6 +491,30 @@ function HomePage() {
     }
 
     const recovery = () => {
+
+        function isFieldPhone() : boolean {
+            return (/^[0-9-]+$/.test(recoveryField));
+        }
+
+        function checkIfDisabled() : boolean {
+
+            const field = recoveryField;
+            const isPhone: boolean = isFieldPhone();
+
+            const phoneRegex = /^(\+?\d{1,3}[\s-]?)?(\(?\d{1,4}\)?[\s-]?)?\d{10,15}$/;
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+            // Disable if invalid
+            if (isPhone && !phoneRegex.test(field)) return true;
+
+            if (!isPhone && !emailRegex.test(field)) return true;
+
+            // Disable if incorrect type
+            if (selectedItem === "Email" && !isPhone) return true;
+
+            return false;
+        }
+
         return (
             <div className="fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-center relative">
@@ -530,6 +556,7 @@ function HomePage() {
                             type="text"
                             placeholder={selectedItem === "Email" ? "Enter your Phone Number" : "Enter your Email or Phone Number"}
                             disabled={selectedItem === "Select Recovery Option"}
+                            onChange={(e) => setRecoveryField(e.target.value)}
                             className={`border rounded-lg px-5 py-2 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 
                                 ${selectedItem === "Select Recovery Option"
                                 ? "border-gray-300 bg-gray-100 cursor-not-allowed"
@@ -539,7 +566,18 @@ function HomePage() {
                         <div className="flex flex-row gap-20">
                             {/** Next Button **/}
                             <button
-                                className="border bg-blue-400 border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                                className="border bg-blue-400 border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white disabled:opacity-50 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                                disabled={selectedItem === "Select Recovery Option" || checkIfDisabled()}
+                                onClick={() => {
+
+                                    let e = recoveryField;
+                                    let p = recoveryField;
+
+                                    if (isFieldPhone()) e = "";
+                                    else p = "";
+
+                                    send_recovery_code(e, p);
+                                }}>
                                 Next
                             </button>
 
@@ -560,6 +598,46 @@ function HomePage() {
                 </div>
             </div>
         )
+    }
+
+    const send_recovery_code = async (email: string, phone: string) => {
+
+        // Send email
+        if (phone === "") {
+
+            const emailBody = `
+                <html>
+                    <body>
+                        <p>Thank you for using our website! Below is your recovery code. Type it exactly into the recovery box on the website for your recovery details.</p>
+                        <h2>Code: <b>DFDFSDFSFE</b></h2>
+                    </body>
+                    
+                    <footer>
+                        <p>Did not request a recovery? We recommend updating your passwords and keep an eye on your account. Do not ever give away your credentials to anyone! </p>
+                    </footer>
+                </html>
+            `
+
+            try {
+                const response = await axios.post(
+                    "http://127.0.0.1:8000/api/email/",
+                    { emailTo: email, subject: "Email Recovery", body: emailBody},
+                    { headers: { "Content-Type": "application/json" } }
+                );
+
+                alert("Response:" + response.data);
+                return response;
+            } catch (error) {
+                alert("Error:" + error);
+                return null;
+            }
+        }
+
+        // Send Phone
+        else {
+
+        }
+
     }
 
     return (
