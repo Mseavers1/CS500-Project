@@ -27,6 +27,8 @@ function HomePage() {
     const [errorSignIn, setErrorSignIn] = useState<IError[]>([]);
 
     const [recoveryField, setRecoveryField] = useState<string>("");
+    const [recoveryCode, setRecoveryCode] = useState<boolean>(false);
+    const [recoveryCodeInput, setRecoveryCodeInput] = useState<string>("");
 
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
@@ -515,60 +517,90 @@ function HomePage() {
             return false;
         }
 
+        const step1 = () => {
+            return (
+                <>
+                    {/** Recovery Label & Dropdown Box **/}
+                    <p className="font-poppins mt-2">Select what you wish to recover.</p>
+                    <div className="relative w-64">
+
+                        <button onClick={() => setShowRecoveryItems(!showRecoveryItems)} disabled={recoveryCode}
+                                className="flex flex-row items-center border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
+                            <span className="flex-grow text-center">{selectedItem}</span>
+                            {showRecoveryItems ? <ChevronUp size={20} className="ml-2 text-gray-600"/> :
+                                <ChevronDown size={20} className="ml-2 text-gray-600"/>}
+                        </button>
+
+                        {showRecoveryItems && (
+                            <div
+                                className="absolute left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                                <ul>
+                                    <li onClick={() => selectOption("Password")}
+                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Password
+                                    </li>
+                                    <li onClick={() => selectOption("Username")}
+                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Username
+                                    </li>
+                                    <li onClick={() => selectOption("Email")}
+                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Email
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                    {/** Input Box **/}
+                    <input
+                        type="text"
+                        placeholder={selectedItem === "Email" ? "Enter your Phone Number" : "Enter your Email or Phone Number"}
+                        disabled={selectedItem === "Select Recovery Option" || recoveryCode}
+                        onChange={(e) => setRecoveryField(e.target.value)}
+                        className={`border rounded-lg px-5 py-2 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                    ${selectedItem === "Select Recovery Option"
+                            ? "border-gray-300 bg-gray-100 cursor-not-allowed"
+                            : "border-blue-200 bg-white"}`}
+                    />
+            </>
+            )
+        }
+
+        const step2 = () => {
+            return (
+                <>
+                    <p className="font-poppins mt-2">Enter the verification code you received.</p>
+
+                    {/** Input Box **/}
+                    <input
+                        type="text"
+                        placeholder="Enter your vertification code"
+                        onChange={(e) => setRecoveryCodeInput(e.target.value)}
+                        className={`border rounded-lg px-5 py-2 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                </>
+            )
+        }
+
         return (
             <div className="fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-center relative">
 
                     <h2 className="font-poppins text-xl font-semibold">Recovery Options</h2>
 
-                    {/** Recovery Label & Dropdown Box **/}
                     <div className="flex flex-col items-center gap-5">
-                        <p className="font-poppins mt-2">Select what you wish to recover.</p>
-                        <div className="relative w-64">
 
-                            <button onClick={() => setShowRecoveryItems(!showRecoveryItems)}
-                                    className="flex flex-row items-center border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
-                                <span className="flex-grow text-center">{selectedItem}</span>
-                                {showRecoveryItems ? <ChevronUp size={20} className="ml-2 text-gray-600"/> :
-                                    <ChevronDown size={20} className="ml-2 text-gray-600"/>}
-                            </button>
-
-                            {showRecoveryItems && (
-                                <div
-                                    className="absolute left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                                    <ul>
-                                        <li onClick={() => selectOption("Password")}
-                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Password
-                                        </li>
-                                        <li onClick={() => selectOption("Username")}
-                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Username
-                                        </li>
-                                        <li onClick={() => selectOption("Email")}
-                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Email
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-
-                        {/** Input Box **/}
-                        <input
-                            type="text"
-                            placeholder={selectedItem === "Email" ? "Enter your Phone Number" : "Enter your Email or Phone Number"}
-                            disabled={selectedItem === "Select Recovery Option"}
-                            onChange={(e) => setRecoveryField(e.target.value)}
-                            className={`border rounded-lg px-5 py-2 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                ${selectedItem === "Select Recovery Option"
-                                ? "border-gray-300 bg-gray-100 cursor-not-allowed"
-                                : "border-blue-200 bg-white"}`}
-                        />
+                        {/** Recovery Label & Dropdown Box OR Recovery Code Verification**/}
+                        {recoveryCode ? step2() : step1()}
 
                         <div className="flex flex-row gap-20">
                             {/** Next Button **/}
                             <button
                                 className="border bg-blue-400 border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white disabled:opacity-50 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                disabled={selectedItem === "Select Recovery Option" || checkIfDisabled()}
+                                disabled={(!recoveryCode && (selectedItem === "Select Recovery Option" || checkIfDisabled()) || (recoveryCode && (recoveryCodeInput === "")))}
                                 onClick={() => {
+
+                                    if (recoveryCode) {
+                                        return
+                                    }
 
                                     let e = recoveryField;
                                     let p = recoveryField;
@@ -577,13 +609,16 @@ function HomePage() {
                                     else p = "";
 
                                     send_recovery_code(e, p);
+                                    setRecoveryCode(true);
                                 }}>
-                                Next
+                                {recoveryCode ? "Verify Code" : 'Next'}
                             </button>
 
                             {/** Close Button **/}
                             <button
                                 onClick={() => {
+                                    setRecoveryField("");
+                                    setRecoveryCode(false);
                                     setShowRecoveryMenu(false);
                                     setShowRecoveryItems(false)
                                 }}
@@ -605,27 +640,14 @@ function HomePage() {
         // Send email
         if (phone === "") {
 
-            const emailBody = `
-                <html>
-                    <body>
-                        <p>Thank you for using our website! Below is your recovery code. Type it exactly into the recovery box on the website for your recovery details.</p>
-                        <h2>Code: <b>DFDFSDFSFE</b></h2>
-                    </body>
-                    
-                    <footer>
-                        <p>Did not request a recovery? We recommend updating your passwords and keep an eye on your account. Do not ever give away your credentials to anyone! </p>
-                    </footer>
-                </html>
-            `
-
             try {
                 const response = await axios.post(
-                    "http://127.0.0.1:8000/api/email/",
-                    { emailTo: email, subject: "Email Recovery", body: emailBody},
+                    "http://127.0.0.1:8000/api/recovery/email",
+                    { emailTo: email, recoveryType: selectedItem},
                     { headers: { "Content-Type": "application/json" } }
                 );
 
-                alert("Response:" + response.data);
+                //alert("Response:" + response.data);
                 return response;
             } catch (error) {
                 alert("Error:" + error);

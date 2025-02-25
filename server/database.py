@@ -1,6 +1,9 @@
 import base64
 import os
+from datetime import datetime
+
 from dotenv import load_dotenv
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from cryptography.fernet import Fernet
@@ -10,6 +13,7 @@ from contextlib import asynccontextmanager
 
 from base import Base
 from models.database.user_model_db import UserTable
+from models.database.user_recovery_code_model_db import UserRecoveryCode
 
 load_dotenv()
 
@@ -103,6 +107,7 @@ class Database:
 
             if u:
                 return {
+                    "user_id": user.id,
                     "user_email": self.decrypt_data(user.user_email),
                     "user_username": self.decrypt_data(user.user_username),
                     "user_password": user.user_password,
@@ -110,8 +115,57 @@ class Database:
                     "user_type": user.user_type
                 }
 
-
             return None  # No match found
+
+    async def validate_recovery_code(self, user_id: int, code: str):
+        hashed_code = hash_data(code)
+
+        try:
+            async with self.get_db() as session:
+                # Check if the user has a recovery code
+                result = await session.execute(select(UserRecoveryCode).where(UserRecoveryCode.user_id == user_id))
+                existing_code = result.scalars().first()
+
+                if existing_code:
+                    # Check if the code matches
+                    if bcrypt.checkpw(hashed_code.encode(), existing_code.code.encode()):
+
+                        # Delete the entry if the code matches
+                        await session.delete(existing_code)
+                        await session.commit()
+                        return {"validate": True}
+                    else:
+                        return {"error": "Recovery code is incorrect.", "validate": False}
+                else:
+                    return {"error": "No recovery code found for this user.", "validate": False}
+
+        except SQLAlchemyError as e:
+            return {"error": "An unexpected error occurred.", "details": str(e)}
+
+    async def add_recovery_code(self, user_id: int, code: str, recovery_type: str):
+        hashed_code = hash_data(code)
+
+        try:
+            async with self.get_db() as session:
+                # Check if the user already has a recovery code
+                result = await session.execute(select(UserRecoveryCode).where(UserRecoveryCode.user_id == user_id))
+                existing_code = result.scalars().first()
+
+                if existing_code:
+                    # Update existing entry
+                    existing_code.code = hashed_code
+                    existing_code.recovery_type = recovery_type
+                    existing_code.date_generated = datetime.utcnow()
+                else:
+                    # Create a new entry
+                    new_code = UserRecoveryCode(user_id=user_id, code=hashed_code, recovery_type=recovery_type)
+                    session.add(new_code)
+
+                await session.commit()
+                return {"message": "Recovery Code saved successfully!", "user_id": user_id}
+
+        except SQLAlchemyError as e:
+            return {"error": "An unexpected error occurred.", "details": str(e)}
 
     # Adds a user to the User table
     async def add_user(self, email: str, username: str, password: str, phone: str or None, u_type: str = 'student'):
