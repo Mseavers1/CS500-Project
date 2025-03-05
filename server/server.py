@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import Database
 from models.email_model import EmailSend
 from models.recovery_email_model import RecoveryEmail
+from models.recovery_verify import RecoveryVerify
 
 from models.user_create_model import UserCreate
 from models.user_exists_model import UserExists
@@ -97,6 +98,24 @@ class ServerAPI:
                 return {"found_user": True}
 
             return {"founder_user": False}
+
+        @self.app.post("/api/recovery/verify")
+        async def verify_recovery_code(code: RecoveryVerify):
+
+            # Check if code is provided
+            if not code.code:
+                raise HTTPException(status_code=400, detail="A code must be provided.")
+
+            # Check if user identification is empty
+            if not any[code.email, code.username, code.phone]:
+                raise HTTPException(status_code=400, detail="Username, phone, or email must be provided.")
+
+            # Get user
+            user = await self.database.get_user(email=code.email, username=code.username, phone=code.phone)
+
+            result = await self.database.validate_recovery_code(user, code.code)
+
+            print(result)
 
         @self.app.post("/api/recovery/email")
         async def send_recovery_email(email: RecoveryEmail):

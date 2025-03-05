@@ -29,6 +29,7 @@ function HomePage() {
     const [recoveryField, setRecoveryField] = useState<string>("");
     const [recoveryCode, setRecoveryCode] = useState<boolean>(false);
     const [recoveryCodeInput, setRecoveryCodeInput] = useState<string>("");
+    const [recoveryComplete, setRecoveryComplete] = useState<boolean>(false);
 
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
@@ -593,12 +594,21 @@ function HomePage() {
 
                         <div className="flex flex-row gap-20">
                             {/** Next Button **/}
-                            <button
+                            {recoveryComplete ? "" :
+                                <button
                                 className="border bg-blue-400 border-gray-300 rounded-lg px-4 py-2 hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white disabled:opacity-50 disabled:bg-gray-600 disabled:cursor-not-allowed"
                                 disabled={(!recoveryCode && (selectedItem === "Select Recovery Option" || checkIfDisabled()) || (recoveryCode && (recoveryCodeInput === "")))}
                                 onClick={() => {
 
                                     if (recoveryCode) {
+
+                                        // Verify code is correct
+                                        const response = verify_recovery_code("", "", "", recoveryCodeInput)
+
+                                        //alert(response)
+
+                                        setRecoveryComplete(true);
+
                                         return
                                     }
 
@@ -612,11 +622,13 @@ function HomePage() {
                                     setRecoveryCode(true);
                                 }}>
                                 {recoveryCode ? "Verify Code" : 'Next'}
-                            </button>
+                                </button>
+                            }
 
                             {/** Close Button **/}
                             <button
                                 onClick={() => {
+                                    setRecoveryComplete(false);
                                     setRecoveryField("");
                                     setRecoveryCode(false);
                                     setShowRecoveryMenu(false);
@@ -635,6 +647,23 @@ function HomePage() {
         )
     }
 
+    const verify_recovery_code = async (email: string, username: string, phone: string, code: string) => {
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:8000/api/recovery/verify",
+                {email: email, username: username, phone: phone, code: code},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            //alert("Response:" + response.data);
+            return response;
+        }
+        catch (error) {
+            alert("Error: " + error);
+            return null
+        }
+    }
+
     const send_recovery_code = async (email: string, phone: string) => {
 
         // Send email
@@ -643,8 +672,8 @@ function HomePage() {
             try {
                 const response = await axios.post(
                     "http://127.0.0.1:8000/api/recovery/email",
-                    { emailTo: email, recoveryType: selectedItem},
-                    { headers: { "Content-Type": "application/json" } }
+                    {emailTo: email, recoveryType: selectedItem},
+                    {headers: {"Content-Type": "application/json"}}
                 );
 
                 //alert("Response:" + response.data);
