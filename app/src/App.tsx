@@ -2,6 +2,9 @@ import React from 'react';
 import './App.css';
 
 import HomePage from "./components/HomePage";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import TopicSelector from "./components/TopicSelector";
+import QuestionSolver from "./components/QuestionSolver";
 
 function App() {
 
@@ -26,20 +29,26 @@ function App() {
     }
 
     return (
-        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
+        <Router>
+            <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
 
-            {/** Header **/}
-            {has_scrolled() ? header() : ""}
+                {/** Header **/}
+                {has_scrolled() ? header() : ""}
 
-            {/** Body **/}
-            <div className="flex justify-center items-center h-full">
-                <HomePage/>
+                {/** Body (Pages) **/}
+                <div className="flex justify-center items-center h-full p-5">
+                    <Routes>
+                        <Route path="/" element={<HomePage/>}/>
+                        <Route path="/selector" element={<TopicSelector/>}/>
+                        <Route path="/solve" element={<QuestionSolver/>}/>
+                    </Routes>
+                </div>
+
+                {/** Footer **/}
+                {has_scrolled() ? footer() : ""}
+
             </div>
-
-            {/** Footer **/}
-            {has_scrolled() ? footer() : ""}
-
-        </div>
+        </Router>
     )
 }
 
