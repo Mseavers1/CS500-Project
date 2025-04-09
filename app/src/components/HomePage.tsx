@@ -1,8 +1,10 @@
 import {ChevronDown, ChevronUp, Eye, EyeOff} from "lucide-react";
 import React, {useEffect, useRef, useState} from "react";
+import { useUser } from './UserContext';
 
 import IError from "./IError";
 import axios from "axios";
+import {useNavigate} from "react-router-dom";
 
 function HomePage() {
 
@@ -30,6 +32,13 @@ function HomePage() {
     const [recoveryCode, setRecoveryCode] = useState<boolean>(false);
     const [recoveryCodeInput, setRecoveryCodeInput] = useState<string>("");
     const [recoveryComplete, setRecoveryComplete] = useState<boolean>(false);
+
+    const {username, setUsername} = useUser();
+    const nav = useNavigate();
+
+    useEffect(() => {
+        if (username !== null && username !== "") nav("/dashboard");
+    }, []);
 
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
@@ -140,10 +149,11 @@ function HomePage() {
 
         // Attempt to login if no errors
         if (msg === "" && p_msg === "") {
-            let success = await login(l_email.toLowerCase(), l_phone, l_username.toLowerCase());
+            let success : boolean = await login(l_email.toLowerCase(), l_phone, l_username.toLowerCase());
 
-            if (success?.data.message === "Login Successful.") {
-                alert("successfully logged in!");
+            // If login successful, go to dashboard
+            if (success) {
+                nav("/dashboard")
                 return;
             }
 
@@ -301,13 +311,20 @@ function HomePage() {
 
         try {
             const response = await axios.post(
-                "http://127.0.0.1:8000/api/users/login/",
+                "http://127.0.0.1" +
+                ":8000/api/users/login/",
                 { email: email, username: username, phone: phone, password: passwordLogin},
                 { headers: { "Content-Type": "application/json" } }
             );
 
-            alert("Response:" + response.data);
-            return response;
+            // Store username in local storage and react
+            if (response.data.successful) {
+                let uname = response.data.username;
+                setUsername(uname);
+                localStorage.setItem('username', uname);
+            }
+
+            return response.data.successful;
         } catch (error) {
             alert("Error:" + error);
             return null;

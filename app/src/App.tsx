@@ -1,10 +1,12 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import './App.css';
 
 import HomePage from "./components/HomePage";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {BrowserRouter as Router, Routes, Route, useNavigate} from 'react-router-dom';
 import TopicSelector from "./components/TopicSelector";
 import QuestionSolver from "./components/QuestionSolver";
+import ProfilePage from "./components/ProfilePage";
+import {ProtectedRoute} from "./components/ProtectedRoute";
 
 function App() {
 
@@ -29,26 +31,46 @@ function App() {
     }
 
     return (
-        <Router>
-            <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
+        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
 
-                {/** Header **/}
-                {has_scrolled() ? header() : ""}
+            {/** Header **/}
+            {has_scrolled() ? header() : ""}
 
-                {/** Body (Pages) **/}
-                <div className="flex justify-center items-center h-full p-5">
-                    <Routes>
-                        <Route path="/" element={<HomePage/>}/>
-                        <Route path="/selector" element={<TopicSelector/>}/>
-                        <Route path="/solve" element={<QuestionSolver/>}/>
-                    </Routes>
-                </div>
-
-                {/** Footer **/}
-                {has_scrolled() ? footer() : ""}
-
+            {/** Body (Pages) **/}
+            <div className="flex justify-center items-center h-full p-5">
+                <Routes>
+                    <Route path="/" element={<HomePage/>}/>
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <ProfilePage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/selector"
+                        element={
+                            <ProtectedRoute>
+                                <TopicSelector />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/solve"
+                        element={
+                            <ProtectedRoute>
+                                <QuestionSolver />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Routes>
             </div>
-        </Router>
+
+            {/** Footer **/}
+            {has_scrolled() ? footer() : ""}
+
+        </div>
     )
 }
 
