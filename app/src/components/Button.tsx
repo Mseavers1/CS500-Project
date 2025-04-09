@@ -1,13 +1,14 @@
 interface ButtonProps {
     name: string;
     onClick: () => void;
-    backgroundColor?: string; // Optional backgroundColor with default value
+    backgroundColor?: string;
+    colorDif?: number;
 }
 
-export default function Button({ name, onClick, backgroundColor = "blue-500" }: ButtonProps) {
+export default function Button({ name, onClick, backgroundColor = "blue-500", colorDif = 200 }: ButtonProps) {
 
     const [color, shade] = backgroundColor.split('-');
-    const hoverColor = `${color}-${parseInt(shade, 10) + 200}`;
+    const hoverColor = `${color}-${parseInt(shade, 10) + colorDif}`;
 
     return (
         <button
