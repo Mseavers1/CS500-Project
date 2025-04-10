@@ -33,11 +33,11 @@ function HomePage() {
     const [recoveryCodeInput, setRecoveryCodeInput] = useState<string>("");
     const [recoveryComplete, setRecoveryComplete] = useState<boolean>(false);
 
-    const {username, setUsername} = useUser();
+    const {username, setUsername, authorization, setAuthorization} = useUser();
     const nav = useNavigate();
 
     useEffect(() => {
-        if (username !== null && username !== "") nav("/dashboard");
+        if ((username !== null && username !== "") && (authorization !== null && authorization !== "")) nav("/dashboard");
     }, []);
 
     useEffect(() => {
@@ -320,8 +320,11 @@ function HomePage() {
             // Store username in local storage and react
             if (response.data.successful) {
                 let uname = response.data.username;
+                let auth = response.data.authorization;
                 setUsername(uname);
+                setAuthorization(auth);
                 localStorage.setItem('username', uname);
+                localStorage.setItem('authorization', auth);
             }
 
             return response.data.successful;

@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, Float, Boolean, DATETIME
-
+from sqlalchemy import Column, Integer, Float, Boolean, DATETIME, ForeignKey
 from base import Base
 
 
@@ -7,9 +6,9 @@ class TransactionLogTable(Base):
     __tablename__ = 'transactions'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, unique=True, nullable=False)
-    topic_id = Column(Integer, unique=True, nullable=False)
-    question_type_id = Column(Integer, unique=True, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    topic_id = Column(Integer, ForeignKey('topics.topic_id'), nullable=False)
+    question_type_id = Column(Integer, ForeignKey('question_types.type_id'), nullable=False)
     timestamp = Column(DATETIME, nullable=False)
     difficulty = Column(Float, nullable=False)
     is_correct = Column(Boolean, nullable=False)

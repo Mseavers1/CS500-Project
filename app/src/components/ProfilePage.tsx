@@ -5,15 +5,16 @@ import {useNavigate} from "react-router-dom";
 
 export default function ProfilePage() {
 
-    const { username } = useUser();
+    const { username, authorization } = useUser();
     const nav = useNavigate();
 
     return (
         <div className="flex flex-col">
-            Hello {username}!
+            Hello {username} of type {authorization}!
 
             <Button name="Selector" onClick={() => {nav("/selector"); }} colorDif={100}/>
             <LogoutButton />
+            {authorization === "admin" ? <Button name="Admin Pannel" onClick={() => {}} /> : ""}
         </div>
     )
 }

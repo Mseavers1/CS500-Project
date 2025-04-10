@@ -65,9 +65,8 @@ class ServerAPI:
 
             user = await self.database.validate_login(user.password, user.email, user.username, user.phone)
 
-
             if user is not None:
-                return {"successful": True, "username": user["user_username"]}
+                return {"successful": True, "username": user["user_username"], "authorization": user["user_type"]}
 
             return {"successful": False}
 

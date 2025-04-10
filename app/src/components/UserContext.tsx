@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type UserContextType = {
     username: string | null;
+    authorization: string | null;
     setUsername: (username: string | null) => void;
+    setAuthorization: (authorization: string | null) => void;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -12,8 +14,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         return localStorage.getItem('username');
     });
 
+    const [authorization, setAuthorization] = useState<string | null>(() => {
+        return localStorage.getItem('authorization');
+    });
+
     return (
-        <UserContext.Provider value={{ username, setUsername }}>
+        <UserContext.Provider value={{ username, setUsername, authorization, setAuthorization }}>
             {children}
         </UserContext.Provider>
     );
