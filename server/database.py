@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 from datetime import datetime
@@ -14,6 +15,10 @@ from contextlib import asynccontextmanager
 from base import Base
 from models.database.user_model_db import UserTable
 from models.database.user_recovery_code_model_db import UserRecoveryCode
+from models.database.topic_db import TopicTable
+from models.database.rule_db import RuleTable
+from models.database.question_type_db import QuestionTypeTable
+from models.database.question_db import QuestionTable
 
 load_dotenv()
 
@@ -42,9 +47,6 @@ class Database:
 
         # Create session factory
         self.AsyncSessionLocal = sessionmaker(bind=self.engine, class_=AsyncSession, expire_on_commit=False)
-
-        # Create tables if any
-        self.create_tables()
 
     # Grabs the database for fastapi
     @asynccontextmanager

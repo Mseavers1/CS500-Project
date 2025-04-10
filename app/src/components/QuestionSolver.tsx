@@ -1,33 +1,70 @@
-import React from "react";
-import cfgGenerator from "../generators/cfg_generator";
+import React, {useEffect, useState} from "react";
+import "katex/dist/katex.min.css";
+import { InlineMath, BlockMath } from "react-katex";
+import axios from "axios";
 
 function QuestionSolver () {
 
-    const [ctf, setCTF] = React.useState(() => new cfgGenerator());
+    const [problem, setProblem] = useState<string | null>(null);
+    const [solution, setSolution] = useState<string | null>(null);
+    const [complexityValue, setComplexity] = useState<number>(3);
+    const [answer, setAnswer] = useState<string>("");
 
-    function testing() : string {
-        ctf.add("S", ["E=E"], 0);
-        ctf.add("T", ["a", "x", "a(T)"], 1);
-        ctf.add("E", ["E+T", "E-T", "T", "P", "Q"], 2);
-        ctf.add("P", ["(E)(E)"], 3);
-        ctf.add("Q", ["(E)/(E)"], 0);
+    const generateProblem = async (complexity: number) => {
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:8000/api/problem/generate/",
+                { complexity },
+                { headers: { "Content-Type": "application/json" } }
+            );
 
-        let weights = new Map<string, number[]>();
+            //alert(response.data.output)
 
-        weights.set("S", [1]);
-        weights.set("T", [0.45, 0.45, 0.1]);
-        weights.set("E", [0.1, 0.1, 0.72, 0.05, 0.03]);
-        weights.set("P", [1]);
-        weights.set("Q", [1]);
+            setProblem(response.data.problem);
+            setSolution(response.data.solution);
+        } catch (error) {
+            console.error("Error fetching problem:", error);
+        }
+    };
 
-        return ctf.generate(weights);
+    useEffect(() => {
+        generateProblem(complexityValue);
+    }, []);
+
+    const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setComplexity(Number(event.target.value));
+    };
+
+    function displayProblem(problem: string | null) {
+
+        if (problem === null) {
+            return;
+        }
+
+        return (
+            <BlockMath math={problem} />
+        );
     }
 
     return (
         <div className="flex flex-col text-center items-center gap-5">
 
+            <div className="slider-container" style={{padding: "20px", textAlign: "center"}}>
+                <h2>Complexity: {complexityValue}</h2>
+
+                {/* Slider */}
+                <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    value={complexityValue}
+                    onChange={handleSliderChange}
+                    style={{width: "80%"}}
+                />
+            </div>
+
             <p className="text-2xl font-bold text-black">Solve for X</p>
-            <p className="text-xl text-black">{testing()}</p>
+            <p className="text-xl text-black"> {displayProblem(problem)} </p>
 
             {/* Input & Submit Box */}
             <div className="flex flex-row gap-3">
@@ -35,13 +72,32 @@ function QuestionSolver () {
                     id="answer"
                     type="text"
                     placeholder="Enter your answer"
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
                 />
 
                 <button
                     className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={() => {
-                        //setSelectedTopic(title)
+
+                        let a = answer;
+
+                        // Get answer if it has x=
+                        if (answer.includes("=")) {
+                            let div = answer.split("=");
+                            a = div[1];
+                        }
+
+                        // Check if answer matches solution
+                        if (a == solution) {
+                            alert("Correct!")
+                        }
+                        else {
+                            alert("Incorrect. Correct answer was: " + solution)
+                        }
+
+                        generateProblem(complexityValue);
                     }}>
                     Submit
                 </button>
@@ -53,7 +109,7 @@ function QuestionSolver () {
                 <button
                     className="bg-blue-300 text-white px-4 py-2 rounded-lg hover:bg-blue-400 active:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={() => {
-                        //setSelectedTopic(title)
+
                     }}>
                     Help
                 </button>
@@ -61,7 +117,7 @@ function QuestionSolver () {
                 <button
                     className="bg-blue-300 text-white px-4 py-2 rounded-lg hover:bg-blue-400 active:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={() => {
-                        //setSelectedTopic(title)
+                        generateProblem(complexityValue);
                     }}>
                     Skip
                 </button>

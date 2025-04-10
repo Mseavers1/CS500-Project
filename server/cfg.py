@@ -1,5 +1,6 @@
 import copy
 import random
+import re
 
 
 class CFG:
@@ -8,30 +9,41 @@ class CFG:
         self.rules = {}  # Key - variable | Value - tuple of ruleset, cost, weight
         self.starting_var = starting_variable
 
-    # Check if the starting variable exists in the ruleset
     def check_if_missing_start(self):
+
+        """Check if the starting variable exists in the ruleset"""
+
         if self.starting_var not in self.rules:
             raise ValueError(f"Starting variable {self.starting_var} is not in the rule set!")
 
-    # Creates or adds the new rule associated to a variable
-    def add_rule(self, variable, ruleset, cost, weight):
+    def add_rule(self, variable, ruleset, cost, weight, priority):
+
+        """Creates or adds the new rule associated to a variable"""
 
         # Add rule if rule doesn't already exist
         if variable not in self.rules:
-            self.rules[variable] = ([ruleset], [cost], [weight])
+            self.rules[variable] = ([ruleset], [cost], [weight], [priority])
 
         # If key exist, append it onto the existing rules
         else:
             self.rules[variable][0].append(ruleset)
             self.rules[variable][1].append(cost)
             self.rules[variable][2].append(weight)
+            self.rules[variable][3].append(priority)
 
-    # Generate a string from in this language based on a certain cost value
-    def generate(self, cost):
+    def generate(self, capped_cost):
+        """Generate a string from in this language based on a certain cost value"""
+
         used_rules = copy.deepcopy(self.rules)
         total_cost = 0
 
         def replace_variable(exp, index, replacement):
+            """Replaced a index in a string with a replacement string"""
+
+            # if index is neg, have it be the positive version
+            if index < 0:
+                index = len(exp) + index
+
             out = ""
 
             for i in range(len(exp)):
@@ -44,90 +56,118 @@ class CFG:
             return out
 
         def expand(variable):
-            current_set = used_rules[variable]
+            """Expands the current variable into one of its available options"""
 
-            highest_rules = []
-            highest_cost = 0
-            selected_i = 0
+            options = used_rules[variable]
+            highest_costs = []
+            selected_i = None
 
-            # Find the indexes that provide the highest costs
-            for i in range(len(current_set[0])):
-                i_cost = current_set[1][i]
+            # Selects the i values that have the highest cost but are within the capped
+            for i in range(len(options[0])):
 
-                # If higher cost if found, reset the highest rules
-                if i_cost > current_set[1][highest_cost] and i_cost + total_cost <= cost:
-                    highest_rules = [i]
-                    highest_cost = i
+                i_cost = options[1][i]
 
-                # If same cost, add them to the highest rules
-                elif i_cost == current_set[1][highest_cost]:
-                    highest_rules.append(i)
+                # If option is the same cost as the highest, add it to the available options
+                if len(highest_costs) > 0 and i_cost == options[1][highest_costs[0]]:
+                    highest_costs.append(i)
 
-            # If multiple choices, randomly pick using the weights
-            if len(highest_rules) > 1:
-                collective_weights = sum(current_set[2][i] for i in highest_rules)
+                # If the option is higher, reset options and select highest
+                elif len(highest_costs) == 0 or (i_cost > options[1][highest_costs[0]] and i_cost + total_cost <= capped_cost):
+                    highest_costs = [i]
 
-                rand = random.random()
-                total_chance = 0
+            # If multiple i values, select only one based on the weight values
+            if len(highest_costs) > 1:
 
-                # Goes to each i value and calculate the chance, selecting the randomly picked i value
-                for i in highest_rules:
-                    total_chance += current_set[2][i] / collective_weights
+                rand_num = random.random()
+                collective_weights = sum(options[2][i] for i in highest_costs)
+                total_weights = 0
 
-                    if rand <= total_chance:
+                # Iterates through each cost and chances to see if i is selected
+                for i in highest_costs:
+                    total_weights += options[2][i] / collective_weights
+
+                    if rand_num <= total_weights:
                         selected_i = i
                         break
             else:
-                selected_i = 0
+                selected_i = highest_costs[0]
 
-            current_cost = used_rules[variable][1][selected_i]
+            # Return langauge of the selected i and the cost
+            cost = options[1][selected_i]
             used_rules[variable][1][selected_i] += self.rules[variable][1][selected_i]
 
-            return current_set[0][selected_i], current_cost
+            return options[0][selected_i], cost
 
-        expression, expression_cost = expand(self.starting_var)
-        total_cost += expression_cost
+        # Start with the starting variable and then keep expanding until finished
+        expression, starting_cost = expand(self.starting_var)
+        total_cost += starting_cost
+        starting_i = 0
 
-        current_index = 0
-        no_variables = True
-
+        step = 0
         while True:
 
-            # Only expand if the current index is on a variable
-            if expression[current_index] in used_rules:
-                no_variables = False
+            end_i = len(expression) if starting_i == 0 else -len(expression) - 1
+            increment = 1 if starting_i == 0 else -1
+            priority_location = starting_i
+            highest_priority = 0
+            only_terminals = True
 
-                # Expand current index
-                expanded_expression, expanded_expression_cost = expand(expression[current_index])
-                total_cost += expanded_expression_cost
+            # Retrieve the highest priority variable in expression
+            for i in range(starting_i, end_i, increment):
 
-                # Add to statement
-                target_index = current_index
+                # Only save the first occurrence of the highest priority
+                if expression[i] in used_rules and used_rules[expression[i]][3][0] > highest_priority:
+                    priority_location = i
+                    highest_priority = used_rules[expression[i]][3][0]
 
-                if current_index < 0:
-                    target_index = len(expression) + current_index
+            # Only Expand if the priority is not a terminal
+            if expression[priority_location] in used_rules:
 
-                expression = replace_variable(expression, target_index, expanded_expression)
+                only_terminals = False
 
-            # set current index to the opposite #
-            mid = len(expression) // 2
-            neg_mid = mid - len(expression)
+                # Expand the highest priority
+                expanded, expanded_cost = expand(expression[priority_location])
 
-            print(current_index, mid, neg_mid, expression)
+                # Add total cost
+                total_cost += expanded_cost
 
-            if current_index > 20:
+                # Replace the old variable with the expanded expression in the final expression
+                expression = replace_variable(expression, priority_location, expanded)
+
+            if only_terminals:
                 break
 
-            if current_index == mid or current_index == neg_mid:
+            # Flip starting side only if priority is a 1
+            if highest_priority == 1:
+                if starting_i == 0:
+                    starting_i = -1
+                else:
+                    starting_i = 0
 
-                if no_variables:
-                    break
+            print(f"Step {step}: {expression}   -- Total cost: {total_cost}")
+            step += 1
 
-                no_variables = True
-                current_index = 0
-            elif current_index >= 0:
-                current_index = (current_index + 1) * -1
-            else:
-                current_index *= -1
+        # Replace terminals with values if applicable -- Made with GPT -> Remake?
+        def replace_c(expression):
+            # Regular expression to match LaTeX math commands like \frac{c}{c} or other math syntax
+            latex_pattern = r'\\frac'
+
+            # Find all LaTeX expressions and exclude them from replacement
+            latex_matches = re.findall(latex_pattern, expression)
+
+            # Temporarily replace LaTeX expressions with placeholders
+            for idx, match in enumerate(latex_matches):
+                expression = expression.replace(match, f'DIV{idx}__')
+
+            # Replace all 'c' with a random number, but now it's safe outside LaTeX expressions
+            expression = re.sub(r'c', lambda _: str(random.randint(1, 20)), expression)
+
+            # Restore the LaTeX expressions from placeholders
+            for idx, match in enumerate(latex_matches):
+                expression = expression.replace(f'DIV{idx}__', match)
+
+            return expression
+
+        expression = replace_c(expression)
 
         return expression
