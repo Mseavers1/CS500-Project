@@ -1,6 +1,7 @@
 import Button from "./Button";
 import InputField from "./InputField";
-import React from "react";
+import React, {useEffect} from "react";
+import axios from "axios";
 
 interface CardProps {
     name: string;
@@ -9,17 +10,38 @@ interface CardProps {
     setValue: React.Dispatch<React.SetStateAction<string>>;
     setList: React.Dispatch<React.SetStateAction<string[]>>;
     items: string[];
+    addDBFunction: () => Promise<null | undefined>;
+    getDBFunction: () => Promise<null | undefined>;
+    delDBFunction: (item_name: string) => Promise<null | undefined>;
 }
 
 const Card = (props: CardProps) => {
 
-    function addToList(){
+    useEffect(() => {
+        const fetchItems = async () => {
+            const items = await props.getDBFunction();
+            if (items) {
+                props.setList(items);
+            }
+        };
+
+        fetchItems();
+    }, []);
+
+
+    async function addToList() {
+
+        let res = await props.addDBFunction();
+
+        if (!res) return;
+
         props.setList(prev => [...prev, props.value]);
         props.setValue("");
     }
 
-    function removeFromList(idx: number) {
+    async function removeFromList(idx: number) {
         props.setList(prev => prev.filter((_, i) => i !== idx));
+        await props.delDBFunction(props.items[idx]);
     }
 
     return (
@@ -64,15 +86,117 @@ export default function AdminPanelPage() {
     const [questionItems, setQuestionItems] = React.useState<string[]>([]);
     const [questionInput, setQuestionInput] = React.useState("");
 
+    const addTopic = async () => {
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/topics/add",
+                {itemName: topicInput},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data.successful;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const delTopic = async (topic_name: string) => {
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/topics/del",
+                {itemName: topic_name},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data.successful;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const getTopics = async () => {
+        try {
+            const response = await axios.get(
+                "http://127.0.0.1" +
+                ":8000/api/topics/",
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const addQType = async () => {
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/question-types/add",
+                {itemName: questionTypeInput},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data.successful;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const delQType = async (type_name: string) => {
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/question-types/del",
+                {itemName: type_name},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data.successful;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const getQType = async () => {
+        try {
+            const response = await axios.get(
+                "http://127.0.0.1" +
+                ":8000/api/question-types/",
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            return response.data;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
     return (
         <div className="flex flex-col justify-center text-center gap-5">
 
             <p className="text-[40px]"> Admin Panel </p>
 
             <div className="flex flex-row items-start justify-center gap-10">
-                <Card name="Topics" items={topicItems} hint="Enter new name" value={topicInput} setValue={setTopicInput} setList={setTopicItems} />
-                <Card name="Question Types" items={questionTypesItems} hint="Enter new name" value={questionTypeInput} setValue={setQuestionTypeInput} setList={setQuestionTypesItems} />
-                <Card name="Questions" items={questionItems} hint="Enter new name" value={questionInput} setValue={setQuestionInput} setList={setQuestionItems} />
+                <Card name="Topics" items={topicItems} hint="Enter new name" value={topicInput} setValue={setTopicInput} setList={setTopicItems} addDBFunction={addTopic} getDBFunction={getTopics} delDBFunction={delTopic} />
+                <Card name="Question Types" items={questionTypesItems} hint="Enter new name" value={questionTypeInput} setValue={setQuestionTypeInput} setList={setQuestionTypesItems} addDBFunction={addQType} getDBFunction={getQType} delDBFunction={delQType}/>
+                <Card name="Questions" items={questionItems} hint="Enter new name" value={questionInput} setValue={setQuestionInput} setList={setQuestionItems}addDBFunction={addTopic} getDBFunction={getTopics} delDBFunction={delTopic}/>
             </div>
         </div>
     )

@@ -70,6 +70,117 @@ class Database:
         decrypted = self.fernet.decrypt(encrypted_bytes)
         return decrypted.decode('utf-8')
 
+    async def add_topic(self, topic_name: str):
+
+        try:
+            async with self.get_db() as session:
+
+                # Check if topic already exists
+                result = await session.execute(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+                existing_topic = result.scalar_one_or_none()
+
+                if existing_topic:
+                    return {"successful": False, "message": "Topic already exists"}
+
+                # Add new topic
+                new_topic = TopicTable(
+                    topic_name=topic_name
+                )
+
+                session.add(new_topic)
+                await session.commit()
+            return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_topics(self):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(select(TopicTable.topic_name))
+                topics = result.scalars().all()
+                return topics
+        except Exception as e:
+            print("Error retrieving topics:", e)
+            return []
+
+    async def del_topic(self, topic_name: str):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+                topic = result.scalar_one_or_none()
+
+                if topic:
+                    await session.delete(topic)
+                    await session.commit()
+                    return {"successful": True}
+                else:
+                    return {"successful": False, "message": "Topic not found"}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def add_question_types(self, question_type_name: str):
+
+        try:
+            async with self.get_db() as session:
+
+                # Check if topic already exists
+                result = await session.execute(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == question_type_name)
+                )
+                existing_topic = result.scalar_one_or_none()
+
+                if existing_topic:
+                    return {"successful": False, "message": "Question Type already exists"}
+
+                # Add new topic
+                new_topic = QuestionTypeTable(
+                    type_name=question_type_name
+                )
+
+                session.add(new_topic)
+                await session.commit()
+            return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_question_types(self):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(select(QuestionTypeTable.type_name))
+                types = result.scalars().all()
+                return types
+        except Exception as e:
+            print("Error retrieving question types:", e)
+            return []
+
+    async def del_question_types(self, question_type_name: str):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == question_type_name)
+                )
+                type_o = result.scalar_one_or_none()
+
+                if type_o:
+                    await session.delete(type_o)
+                    await session.commit()
+                    return {"successful": True}
+                else:
+                    return {"successful": False, "message": "Topic not found"}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+
+
+
     async def validate_login(self, password: str, email: str = "", username: str = "", phone: str = ""):
 
         # Get user

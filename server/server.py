@@ -7,6 +7,7 @@ from sympy import symbols, Eq, solve, sympify
 
 from cfg import CFG
 from database import Database
+from models.add_item_name_model import AddItemName
 from models.email_model import EmailSend
 from models.recovery_email_model import RecoveryEmail
 from models.recovery_verify import RecoveryVerify
@@ -69,6 +70,54 @@ class ServerAPI:
                 return {"successful": True, "username": user["user_username"], "authorization": user["user_type"]}
 
             return {"successful": False}
+
+        @self.app.post("/api/question-types/del")
+        async def delete_question_types(type_name: AddItemName):
+            resp = await self.database.del_question_types(type_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while removing the question type.")
+
+        @self.app.post("/api/topics/del")
+        async def delete_topic(topic_name: AddItemName):
+            resp = await self.database.del_topic(topic_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while removing the topic.")
+
+        @self.app.post("/api/topics/add")
+        async def add_topic(topic_name: AddItemName):
+            resp = await self.database.add_topic(topic_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the topic.")
+
+        @self.app.post("/api/question-types/add")
+        async def add_question_type(type_name: AddItemName):
+            resp = await self.database.add_question_types(type_name.itemName)
+
+            print(resp)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the question type.")
+
+        @self.app.get("/api/question-types/")
+        async def get_question_types():
+            return await self.database.get_question_types()
+
+        @self.app.get("/api/topics/")
+        async def get_topics():
+            return await self.database.get_topics()
 
         @self.app.post("/api/users/register/")
         async def user_register(user: UserRegister):
