@@ -3,6 +3,7 @@ import Button from "./Button";
 import InputField from "./InputField";
 
 interface ListCardProps {
+    id: string;
     name: string;
     hint: string;
     value: string;
@@ -17,7 +18,7 @@ interface ListCardProps {
 export const ListCard: React.FC<ListCardProps> = ({
                                                    name, hint, value, setValue,
                                                    items, setList, addDBFunction,
-                                                   delDBFunction, getDBFunction
+                                                   delDBFunction, getDBFunction, id
                                                }) => {
 
     useEffect(() => {
@@ -58,7 +59,7 @@ export const ListCard: React.FC<ListCardProps> = ({
             <hr className="border-b border-black w-[100%] mt-5" />
 
             <div className="mt-5 gap-5 flex flex-row">
-                <InputField hint={hint} width={240} value={value} setValue={setValue} />
+                <InputField id={id} hint={hint} width={240} value={value} setValue={setValue} />
                 <Button name="Add" onClick={addToList} />
             </div>
         </div>
