@@ -7,8 +7,11 @@ from sympy import symbols, Eq, solve, sympify
 
 from cfg import CFG
 from database import Database
+from models.add_question_model import AddQuestion
 from models.add_item_name_model import AddItemName
+from models.add_rule_model import AddRule
 from models.email_model import EmailSend
+from models.get_question_rules_model import GetQuestionRules
 from models.recovery_email_model import RecoveryEmail
 from models.recovery_verify import RecoveryVerify
 
@@ -99,11 +102,50 @@ class ServerAPI:
             # If there’s an unexpected failure
             raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the topic.")
 
+        @self.app.post("/api/question/add")
+        async def add_question(question: AddQuestion):
+
+            if not ([question.rule_id, question.type_name, question.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.add_question(question.topic_name, question.type_name, question.rule_id)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+        @self.app.post("/api/question/")
+        async def get_question_rules(r: GetQuestionRules):
+            if not ([r.type_name, r.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.get_rules(r.topic_name, r.type_name)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+        @self.app.post("/api/rules/add")
+        async def add_rule(rule: AddRule):
+
+            if not ([rule.variable, rule.rule, rule.weight, rule.priority, rule.cost]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.add_rule(rule.variable, rule.rule, rule.weight, rule.priority, rule.cost)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the rule.")
+
         @self.app.post("/api/question-types/add")
         async def add_question_type(type_name: AddItemName):
             resp = await self.database.add_question_types(type_name.itemName)
-
-            print(resp)
 
             if "successful" in resp:
                 return resp

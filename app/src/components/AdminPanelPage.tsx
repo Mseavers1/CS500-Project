@@ -7,6 +7,15 @@ import Button from "./Button";
 
 export default function AdminPanelPage() {
 
+    interface Match {
+        rule_id: number;
+        rule_variable: string;
+        rule_ruleset: string;
+        rule_cost: number;
+        rule_weight: number;
+        rule_priority: number;
+    }
+
     const [topicItems, setTopicItems] = React.useState<string[]>([]);
     const [topicInput, setTopicInput] = React.useState("");
 
@@ -24,6 +33,13 @@ export default function AdminPanelPage() {
 
     const [currentRules, setCurrentRules] = React.useState<string[]>([]);
     const [currentRuleInput, setCurrentRuleInput] = React.useState("");
+
+    const [weightInput, setWeightInput] = React.useState("");
+    const [costInput, setCostInput] = React.useState("");
+    const [priorityInput, setPriorityInput] = React.useState("");
+    const [variableInput, setVariableInput] = React.useState("");
+    const [ruleInput, setRuleInput] = React.useState("");
+    const [matches, setMatches] = React.useState<Match[]>([]);
 
     const addTopic = async () => {
 
@@ -96,6 +112,93 @@ export default function AdminPanelPage() {
         }
     }
 
+    const showRules = async (topic: string, type: string) => {
+
+        if (selectedOption == "" || selectedTopic == "") {
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/question/",
+                {topic_name: topic, type_name: type},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            if (response.data.successful) {
+
+                const matches: Match[] = response.data.matches;
+
+                setMatches(matches);
+            }
+            else {
+                alert(response.data.message);
+            }
+
+
+        } catch (error) {
+        alert("Error:" + error);
+        return null;
+    }
+
+    }
+
+    const addRule = async () => {
+
+        if (variableInput == "" || costInput == "" || ruleInput == "" || weightInput == "" || priorityInput == "") {
+            return;
+        }
+
+        if (selectedOption == "" || selectedTopic == "") {
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/rules/add",
+                {variable: variableInput, cost: costInput, weight: weightInput, priority: priorityInput, rule: ruleInput},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            if (response && response.data.successful) {
+                alert("Rule added!");
+
+                // Add to Question Table
+                const resp = await axios.post(
+                    "http://127.0.0.1" +
+                    ":8000/api/question/add",
+                    {topic_name: selectedTopic, type_name: selectedOption, rule_id: response.data.id},
+                    {headers: {"Content-Type": "application/json"}}
+                );
+
+                if (resp && resp.data.successful) {
+                    alert("Successfully added question!");
+
+                    // Clear inputs
+                    setCostInput("")
+                    setRuleInput("")
+                    setPriorityInput("")
+                    setWeightInput("")
+                    setVariableInput("")
+
+                    // Refresh List
+
+                } else {
+                    alert(resp.data.message);
+                }
+            } else
+            {
+                alert(response.data.message);
+            }
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
     const delQType = async (type_name: string) => {
         try {
             const response = await axios.post(
@@ -155,7 +258,10 @@ export default function AdminPanelPage() {
                     {/* Topic Selector */}
                     <select
                         value={selectedTopic}
-                        onChange={(e) => setSelectedTopic(e.target.value)}
+                        onChange={async (e) => {
+                            setSelectedTopic(e.target.value);
+                            await showRules(e.target.value, selectedOption);
+                        }}
                         className="border rounded-lg px-5 py-2 bg-white focus:outline-none lg:text-lg focus:ring-2 focus:ring-blue-500"
                         style={{width: 240}}
                     >
@@ -170,7 +276,10 @@ export default function AdminPanelPage() {
                     {/* Type Selector */}
                     <select
                         value={selectedOption}
-                        onChange={(e) => setSelectedOption(e.target.value)}
+                        onChange={async (e) => {
+                            setSelectedOption(e.target.value);
+                            await showRules(selectedTopic, e.target.value);
+                        }}
                         className="border rounded-lg px-5 py-2 bg-white focus:outline-none lg:text-lg focus:ring-2 focus:ring-blue-500"
                         style={{width: 240}}
                     >
@@ -186,12 +295,16 @@ export default function AdminPanelPage() {
 
                     {/* Rules */}
                     <div
-                        className="flex flex-col items-center bg-white p-5 mt-5 gap-3 overflow-y-auto flex-grow w-full max-h-[230px]">
-                        {currentRules.map((item, idx) => (
-                            <div key={idx} className="flex flex-row gap-5 items-center w-full justify-between">
-                                <div className="w-[300px] text-left">{item}</div>
-                                {/*<Button name="X" onClick={() => removeFromList(idx)} backgroundColor="red-500"
-                                        width={24} px={8} py={2}/> */}
+                        className="flex flex-col items-center bg-white p-5 mt-5 gap-5 overflow-y-auto flex-grow w-full max-h-[230px]">
+                        {matches.map((m, idx) => (
+                            <div key={idx} className="flex flex-row gap-2 items-center w-full justify-between">
+                                <div className="w-[100px] text-left">{m.rule_variable}</div>
+                                <div className="w-[100px] text-left">{m.rule_ruleset}</div>
+                                <div className="w-[100px] text-left">{m.rule_weight}</div>
+                                <div className="w-[100px] text-left">{m.rule_priority}</div>
+                                <div className="w-[100px] text-left">{m.rule_cost}</div>
+                                <Button name="X" onClick={() => {}} backgroundColor="red-500"
+                                        width={24} px={8} py={2}/>
                             </div>
                         ))}
                     </div>
@@ -199,12 +312,20 @@ export default function AdminPanelPage() {
                     <hr className="border-b border-black w-[100%] mt-5"/>
 
                     <div className="gap-5 flex flex-row">
-                        <InputField id={"variable"} hint="S" width={100} value={currentRuleInput} setValue={setCurrentRuleInput}/>
-                        <InputField id={"rule"} hint="Enter a new rule" width={240} value={currentRuleInput} setValue={setCurrentRuleInput}/>
-                        <InputField id={"weight"} hint="Weight" width={100} value={currentRuleInput} setValue={setCurrentRuleInput}/>
-                        <InputField id={"priority"} hint="Priority" width={100} value={currentRuleInput} setValue={setCurrentRuleInput}/>
-                        <InputField id={"cost"} hint="Cost" width={100} value={currentRuleInput} setValue={setCurrentRuleInput}/>
-                        <Button name="Add" onClick={() => {}}/>
+                        <InputField id={"variable"} hint="Variable" width={100} value={variableInput} setValue={setVariableInput}/>
+                        <InputField id={"rule"} hint="Rule" width={240} value={ruleInput} setValue={setRuleInput}/>
+                        <InputField id={"weight"} hint="Weight" width={100} value={weightInput} setValue={setWeightInput}/>
+                        <InputField id={"priority"} hint="Priority" width={100} value={priorityInput} setValue={setPriorityInput}/>
+                        <InputField id={"cost"} hint="Cost" width={100} value={costInput} setValue={setCostInput}/>
+                        <Button name="Add" onClick={async () => {
+
+                            // Add rule to database
+                            await addRule()
+
+                            // Update list
+                            await showRules(selectedTopic, selectedOption);
+
+                        }}/>
                     </div>
 
                 </div>

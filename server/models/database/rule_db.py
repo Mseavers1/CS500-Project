@@ -15,6 +15,16 @@ class RuleTable(Base):
 
     questions = relationship('QuestionTable', back_populates='rule')
 
+    def to_dict(self):
+        return {
+            "rule_id": self.rule_id,
+            "rule_variable": self.rule_variable,
+            "rule_ruleset": self.rule_ruleset,
+            "rule_cost": self.rule_cost,
+            "rule_weight": self.rule_weight,
+            "rule_priority": self.rule_priority,
+        }
+
     def __repr__(self):
         return f"<RuleTable(id={self.rule_id}, variable={self.rule_variable}, ruleset={self.rule_ruleset}, " \
                f"cost={self.rule_cost}, weight={self.rule_weight}, priority={self.rule_priority})>"

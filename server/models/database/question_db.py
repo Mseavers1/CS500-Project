@@ -11,10 +11,11 @@ class QuestionTable(Base):
     rule_id = Column(Integer, ForeignKey('rules.rule_id'), primary_key=True)
 
     # Create relationships
-    topic = relationship('TopicTable', back_populates='questions')
-    question_type = relationship('QuestionTypeTable', back_populates='questions')
-    rule = relationship('RuleTable', back_populates='questions')
+    topic = relationship('TopicTable', back_populates='questions', lazy="selectin")
+    question_type = relationship('QuestionTypeTable', back_populates='questions', lazy="selectin")
+    rule = relationship('RuleTable', back_populates='questions', lazy="selectin")
 
     def __repr__(self):
-        return f"<RuleTable(id={self.rule_id}, variable={self.rule_variable}, ruleset={self.rule_ruleset}, " \
-               f"cost={self.rule_cost}, weight={self.rule_weight}, priority={self.rule_priority})>"
+        return f"<QuestionTable(rule_id={self.rule_id}, variable={self.rule.rule_variable}, ruleset={self.rule.rule_ruleset}, " \
+               f"cost={self.rule.rule_cost}, weight={self.rule.rule_weight}, priority={self.rule.rule_priority})>"
+
