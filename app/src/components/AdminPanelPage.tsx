@@ -4,6 +4,7 @@ import {ListCard} from "./ListCard";
 import {QuestionCard} from "./QuestionCard";
 import InputField from "./InputField";
 import Button from "./Button";
+import Selector from "./Selector";
 
 export default function AdminPanelPage() {
 
@@ -284,41 +285,42 @@ export default function AdminPanelPage() {
                     <p className="font-bold text-xl text-black">Create new Question</p>
                     <hr className="border-b border-black w-[100%]"/>
 
-                    {/* Topic Selector */}
-                    <select
-                        value={selectedTopic}
-                        onChange={async (e) => {
-                            setSelectedTopic(e.target.value);
-                            await showRules(e.target.value, selectedOption);
-                        }}
-                        className="border rounded-lg px-5 py-2 bg-white focus:outline-none lg:text-lg focus:ring-2 focus:ring-blue-500"
-                        style={{width: 240}}
-                    >
-                        <option value="" disabled>Select a topic</option>
-                        {topicItems.map((topic, idx) => (
-                            <option key={idx} value={topic}>
-                                {topic}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="flex flex-row gap-[100px] justify-center">
+                        {/* Topic Selector */}
+                        <Selector
+                            id="topic-select"
+                            hint="Select a topic"
+                            value={selectedTopic}
+                            setValue={setSelectedTopic}
+                            items={topicItems}
+                            renderItem={(topic, idx) => (
+                                <option key={idx} value={topic}>
+                                    {topic}
+                                </option>
+                            )}
+                            onChangeFunction={async (e) => {
+                                await showRules(e.target.value, selectedOption);
+                            }}
+                        />
 
-                    {/* Type Selector */}
-                    <select
-                        value={selectedOption}
-                        onChange={async (e) => {
-                            setSelectedOption(e.target.value);
-                            await showRules(selectedTopic, e.target.value);
-                        }}
-                        className="border rounded-lg px-5 py-2 bg-white focus:outline-none lg:text-lg focus:ring-2 focus:ring-blue-500"
-                        style={{width: 240}}
-                    >
-                        <option value="" disabled>Select a type</option>
-                        {questionTypesItems.map((type, idx) => (
-                            <option key={idx} value={type}>
-                                {type}
-                            </option>
-                        ))}
-                    </select>
+
+                        {/* Type Selector */}
+                        <Selector
+                            id="type-select"
+                            hint="Select a type"
+                            value={selectedOption}
+                            setValue={setSelectedOption}
+                            items={questionTypesItems}
+                            renderItem={(type, idx) => (
+                                <option key={idx} value={type}>
+                                    {type}
+                                </option>
+                            )}
+                            onChangeFunction={async (e) => {
+                                await showRules(selectedTopic, e.target.value);
+                            }}
+                        />
+                    </div>
 
                     <hr className="border-b border-black w-[100%]"/>
 
@@ -422,7 +424,6 @@ export default function AdminPanelPage() {
                     getDBFunction={getQType}
                     delDBFunction={delQType}
                     addFunction={addQuestion}
-                    isInputField={true}
                     options={options}
                 />
 

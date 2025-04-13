@@ -1,6 +1,7 @@
 import React, {useEffect} from "react";
 import Button from "./Button";
 import InputField from "./InputField";
+import Selector from "./Selector";
 
 interface QuestionCardProps {
     name: string;
@@ -12,7 +13,6 @@ interface QuestionCardProps {
     getDBFunction: () => Promise<string[] | null>;
     delDBFunction: (item: string) => Promise<null | undefined>;
     addFunction: () => void;
-    isInputField: boolean;
     options: string[];
 }
 
@@ -66,20 +66,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
             <div className="mt-5 gap-5 flex flex-row">
 
-                <select
+                <Selector
+                    id="type-select-main"
+                    hint="Select a type"
                     value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    className="border rounded-lg px-5 py-2 bg-white focus:outline-none lg:text-lg focus:ring-2 focus:ring-blue-500"
-                    style={{width: 240}}
-                >
-                    <option value="" disabled>{hint}</option>
-                    {options.map((option, idx) => (
-                        <option key={idx} value={option}>
-                            {option}
+                    setValue={setValue}
+                    items={options}
+                    renderItem={(o, idx) => (
+                        <option key={idx} value={o}>
+                            {o}
                         </option>
-                    ))}
-                </select>
-
+                    )}
+                />
 
                 <Button name="Add" onClick={handleAdd}/>
             </div>
