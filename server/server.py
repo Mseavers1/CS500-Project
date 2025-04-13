@@ -7,7 +7,11 @@ from sympy import symbols, Eq, solve, sympify
 
 from cfg import CFG
 from database import Database
+from models.add_question_model import AddQuestion
+from models.add_item_name_model import AddItemName
+from models.add_rule_model import AddRule
 from models.email_model import EmailSend
+from models.get_question_rules_model import GetQuestionRules
 from models.recovery_email_model import RecoveryEmail
 from models.recovery_verify import RecoveryVerify
 
@@ -69,6 +73,108 @@ class ServerAPI:
                 return {"successful": True, "username": user["user_username"], "authorization": user["user_type"]}
 
             return {"successful": False}
+
+        @self.app.post("/api/question-types/del")
+        async def delete_question_types(type_name: AddItemName):
+            resp = await self.database.del_question_types(type_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while removing the question type.")
+
+        @self.app.post("/api/topics/del")
+        async def delete_topic(topic_name: AddItemName):
+            resp = await self.database.del_topic(topic_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while removing the topic.")
+
+        @self.app.post("/api/topics/add")
+        async def add_topic(topic_name: AddItemName):
+            resp = await self.database.add_topic(topic_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the topic.")
+
+        @self.app.post("/api/question/add")
+        async def add_question(question: AddQuestion):
+
+            if not ([question.rule_id, question.type_name, question.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.add_question(question.topic_name, question.type_name, question.rule_id)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+        @self.app.post("/api/question/")
+        async def get_question_rules(r: GetQuestionRules):
+            if not ([r.type_name, r.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.get_rules(r.topic_name, r.type_name)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+        @self.app.post("/api/rules/add")
+        async def add_rule(rule: AddRule):
+
+            if not ([rule.variable, rule.rule, rule.weight, rule.priority, rule.cost]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.add_rule(rule.variable, rule.rule, rule.weight, rule.priority, rule.cost)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the rule.")
+
+        @self.app.post("/api/rules/del")
+        async def del_rule(q: AddQuestion):
+
+            if not ([q.rule_id, q.type_name, q.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.del_rule(q.rule_id, q.topic_name, q.type_name)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while deleting the rule.")
+
+
+        @self.app.post("/api/question-types/add")
+        async def add_question_type(type_name: AddItemName):
+            resp = await self.database.add_question_types(type_name.itemName)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the question type.")
+
+        @self.app.get("/api/question-types/")
+        async def get_question_types():
+            return await self.database.get_question_types()
+
+        @self.app.get("/api/topics/")
+        async def get_topics():
+            return await self.database.get_topics()
 
         @self.app.post("/api/users/register/")
         async def user_register(user: UserRegister):

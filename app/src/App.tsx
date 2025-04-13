@@ -7,6 +7,7 @@ import TopicSelector from "./components/TopicSelector";
 import QuestionSolver from "./components/QuestionSolver";
 import ProfilePage from "./components/ProfilePage";
 import {ProtectedRoute} from "./components/ProtectedRoute";
+import AdminPanelPage from "./components/AdminPanelPage";
 
 function App() {
 
@@ -31,7 +32,7 @@ function App() {
     }
 
     return (
-        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background">
+        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background font-poppins">
 
             {/** Header **/}
             {has_scrolled() ? header() : ""}
@@ -61,6 +62,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <QuestionSolver />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin"
+                        element={
+                            <ProtectedRoute auth="admin">
+                                <AdminPanelPage />
                             </ProtectedRoute>
                         }
                     />

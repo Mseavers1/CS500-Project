@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 
 from dotenv import load_dotenv
+from sqlalchemy import and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -69,6 +70,283 @@ class Database:
         encrypted_bytes = base64.b64decode(data.encode('utf-8'))
         decrypted = self.fernet.decrypt(encrypted_bytes)
         return decrypted.decode('utf-8')
+
+    async def add_topic(self, topic_name: str):
+
+        try:
+            async with self.get_db() as session:
+
+                # Check if topic already exists
+                result = await session.execute(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+                existing_topic = result.scalar_one_or_none()
+
+                if existing_topic:
+                    return {"successful": False, "message": "Topic already exists"}
+
+                # Add new topic
+                new_topic = TopicTable(
+                    topic_name=topic_name
+                )
+
+                session.add(new_topic)
+                await session.commit()
+            return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_topics(self):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(select(TopicTable.topic_name))
+                topics = result.scalars().all()
+                return topics
+        except Exception as e:
+            print("Error retrieving topics:", e)
+            return []
+
+    async def del_topic(self, topic_name: str):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+                topic = result.scalar_one_or_none()
+
+                if topic:
+                    await session.delete(topic)
+                    await session.commit()
+                    return {"successful": True}
+                else:
+                    return {"successful": False, "message": "Topic not found"}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_rules(self, topic_name, type_name):
+
+        try:
+            async with self.get_db() as session:
+
+                result = await session.execute(
+                    select(QuestionTable)
+                    .join(QuestionTable.topic)
+                    .join(QuestionTable.question_type)
+                    .where(
+                        and_(
+                            TopicTable.topic_name == topic_name,
+                            QuestionTypeTable.type_name == type_name
+                        )
+                    )
+                )
+
+                matches = result.scalars().all()
+
+                rules = [match.rule.to_dict() for match in matches]
+
+                print(f"matches: {rules}, topic_name: {topic_name}, type_name: {type_name}")
+
+            return {"successful": True, "matches": rules}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def add_question(self, topic_name: str, type_name: str, rule_id: int):
+
+        try:
+            async with self.get_db() as session:
+
+                # Get topic_id
+                result = await session.execute(
+                    select(TopicTable.topic_id).where(TopicTable.topic_name == topic_name)
+                )
+
+                topic_id = result.scalar()
+                if topic_id is None:
+                    raise ValueError(f"Topic '{topic_name}' not found.")
+
+                # Get type_id
+                result = await session.execute(
+                    select(QuestionTypeTable.type_id).where(QuestionTypeTable.type_name == type_name)
+                )
+
+                type_id = result.scalar()
+                if type_id is None:
+                    raise ValueError(f"Type '{type_name}' not found.")
+
+                # Check if question already exists
+                result = await session.execute(
+                    select(QuestionTable).where(
+                        and_(
+                            QuestionTable.rule_id == rule_id,
+                            QuestionTable.question_type_id == type_id,
+                            QuestionTable.topic_id == topic_id
+                        )
+                    )
+                )
+
+                existing = result.scalar_one_or_none()
+
+                if existing:
+                    return {"successful": False, "message": "Already exists"}
+
+                # Add question
+                new_q = QuestionTable(
+                    rule_id=rule_id,
+                    question_type_id=type_id,
+                    topic_id=topic_id
+                )
+
+                session.add(new_q)
+                await session.commit()
+            return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def del_rule(self, rule_id: int, topic_name: str, type_name: str):
+        try:
+            async with self.get_db() as session:
+                # Get topic and type from names
+                topic = await session.scalar(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+
+                qtype = await session.scalar(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == type_name)
+                )
+
+                if not topic or not qtype:
+                    return {"successful": False, "message": "Topic or type not found."}
+
+                # Find the QuestionTable row
+                question_entry = await session.scalar(
+                    select(QuestionTable).where(
+                        and_(
+                            QuestionTable.topic_id == topic.topic_id,
+                            QuestionTable.question_type_id == qtype.type_id,
+                            QuestionTable.rule_id == rule_id
+                        )
+                    )
+                )
+
+                if not question_entry:
+                    return {"successful": False, "message": "Question entry not found."}
+
+                # Delete the question entry
+                await session.delete(question_entry)
+                await session.commit()
+
+                # Check if this rule is still used elsewhere
+                remaining_refs = await session.execute(
+                    select(QuestionTable).where(QuestionTable.rule_id == rule_id)
+                )
+                remaining = remaining_refs.scalars().all()
+
+                # If none, delete rule
+                if not remaining:
+                    rule_entry = await session.scalar(
+                        select(RuleTable).where(RuleTable.rule_id == rule_id)
+                    )
+                    if rule_entry:
+                        await session.delete(rule_entry)
+                        await session.commit()
+
+                return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def add_rule(self, variable: str, rule: str, weight: float, priority: float, cost: float):
+        try:
+            async with self.get_db() as session:
+
+                # Check if rule already exists
+                result = await session.execute(
+                    select(RuleTable).where(
+                        and_(
+                            RuleTable.rule_variable == variable,
+                            RuleTable.rule_ruleset == rule
+                        )
+                    )
+                )
+
+                existing = result.scalar_one_or_none()
+
+                if existing:
+                    return {"successful": False, "message": "Rule already exists"}
+
+                # Add new rule
+                new_rule = RuleTable(
+                    rule_variable=variable,
+                    rule_ruleset=rule,
+                    rule_weight=weight,
+                    rule_cost=cost,
+                    rule_priority=priority
+                )
+
+                session.add(new_rule)
+                await session.commit()
+            return {"successful": True, "id": new_rule.rule_id}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def add_question_types(self, question_type_name: str):
+
+        try:
+            async with self.get_db() as session:
+
+                # Check if topic already exists
+                result = await session.execute(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == question_type_name)
+                )
+                existing_topic = result.scalar_one_or_none()
+
+                if existing_topic:
+                    return {"successful": False, "message": "Question Type already exists"}
+
+                # Add new topic
+                new_topic = QuestionTypeTable(
+                    type_name=question_type_name
+                )
+
+                session.add(new_topic)
+                await session.commit()
+            return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_question_types(self):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(select(QuestionTypeTable.type_name))
+                types = result.scalars().all()
+                return types
+        except Exception as e:
+            print("Error retrieving question types:", e)
+            return []
+
+    async def del_question_types(self, question_type_name: str):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == question_type_name)
+                )
+                type_o = result.scalar_one_or_none()
+
+                if type_o:
+                    await session.delete(type_o)
+                    await session.commit()
+                    return {"successful": True}
+                else:
+                    return {"successful": False, "message": "Topic not found"}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
 
     async def validate_login(self, password: str, email: str = "", username: str = "", phone: str = ""):
 
