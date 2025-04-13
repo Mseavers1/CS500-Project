@@ -206,6 +206,59 @@ class Database:
         except Exception as e:
             return {"successful": False, "message": str(e)}
 
+    async def del_rule(self, rule_id: int, topic_name: str, type_name: str):
+        try:
+            async with self.get_db() as session:
+                # Get topic and type from names
+                topic = await session.scalar(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+
+                qtype = await session.scalar(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == type_name)
+                )
+
+                if not topic or not qtype:
+                    return {"successful": False, "message": "Topic or type not found."}
+
+                # Find the QuestionTable row
+                question_entry = await session.scalar(
+                    select(QuestionTable).where(
+                        and_(
+                            QuestionTable.topic_id == topic.topic_id,
+                            QuestionTable.question_type_id == qtype.type_id,
+                            QuestionTable.rule_id == rule_id
+                        )
+                    )
+                )
+
+                if not question_entry:
+                    return {"successful": False, "message": "Question entry not found."}
+
+                # Delete the question entry
+                await session.delete(question_entry)
+                await session.commit()
+
+                # Check if this rule is still used elsewhere
+                remaining_refs = await session.execute(
+                    select(QuestionTable).where(QuestionTable.rule_id == rule_id)
+                )
+                remaining = remaining_refs.scalars().all()
+
+                # If none, delete rule
+                if not remaining:
+                    rule_entry = await session.scalar(
+                        select(RuleTable).where(RuleTable.rule_id == rule_id)
+                    )
+                    if rule_entry:
+                        await session.delete(rule_entry)
+                        await session.commit()
+
+                return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
     async def add_rule(self, variable: str, rule: str, weight: float, priority: float, cost: float):
         try:
             async with self.get_db() as session:

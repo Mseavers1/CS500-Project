@@ -138,10 +138,37 @@ export default function AdminPanelPage() {
 
 
         } catch (error) {
-        alert("Error:" + error);
-        return null;
+            alert("Error:" + error);
+            return null;
+        }
+
     }
 
+    const delRule = async (id: number) => {
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/rules/del",
+                {rule_id: id, topic_name: selectedTopic, type_name: selectedOption},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            if (response && response.data.successful) {
+                alert("Rule removed!");
+
+                // update list
+                await showRules(selectedTopic, selectedOption);
+            }
+            else
+            {
+                alert(response.data.message);
+            }
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
     }
 
     const addRule = async () => {
@@ -182,8 +209,6 @@ export default function AdminPanelPage() {
                     setPriorityInput("")
                     setWeightInput("")
                     setVariableInput("")
-
-                    // Refresh List
 
                 } else {
                     alert(resp.data.message);
@@ -252,6 +277,10 @@ export default function AdminPanelPage() {
 
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
 
+                    <div className="absolute top-2 right-2">
+                        <Button name={"X"} onClick={() => {setQuestionFormOpen(false);}} backgroundColor={"red-500"} width={24} px={8} py={2}/>
+                    </div>
+
                     <p className="font-bold text-xl text-black">Create new Question</p>
                     <hr className="border-b border-black w-[100%]"/>
 
@@ -296,6 +325,18 @@ export default function AdminPanelPage() {
                     {/* Rules */}
                     <div
                         className="flex flex-col items-center bg-white p-5 mt-5 gap-5 overflow-y-auto flex-grow w-full max-h-[230px]">
+
+                        <div
+                            className="flex flex-row gap-2 items-center w-full justify-between font-bold border-b pb-2">
+                            <div className="w-[100px] text-left">Variable</div>
+                            <div className="w-[100px] text-left">Ruleset</div>
+                            <div className="w-[100px] text-left">Weight</div>
+                            <div className="w-[100px] text-left">Priority</div>
+                            <div className="w-[100px] text-left">Cost</div>
+                            <div className="w-[100px] text-left">Action</div>
+                        </div>
+
+
                         {matches.map((m, idx) => (
                             <div key={idx} className="flex flex-row gap-2 items-center w-full justify-between">
                                 <div className="w-[100px] text-left">{m.rule_variable}</div>
@@ -303,7 +344,9 @@ export default function AdminPanelPage() {
                                 <div className="w-[100px] text-left">{m.rule_weight}</div>
                                 <div className="w-[100px] text-left">{m.rule_priority}</div>
                                 <div className="w-[100px] text-left">{m.rule_cost}</div>
-                                <Button name="X" onClick={() => {}} backgroundColor="red-500"
+                                <Button name="X" onClick={async () => {
+                                    await delRule(m.rule_id);
+                                }} backgroundColor="red-500"
                                         width={24} px={8} py={2}/>
                             </div>
                         ))}
@@ -312,7 +355,8 @@ export default function AdminPanelPage() {
                     <hr className="border-b border-black w-[100%] mt-5"/>
 
                     <div className="gap-5 flex flex-row">
-                        <InputField id={"variable"} hint="Variable" width={100} value={variableInput} setValue={setVariableInput}/>
+                        <InputField id={"variable"} hint="Variable" width={100} value={variableInput}
+                                    setValue={setVariableInput}/>
                         <InputField id={"rule"} hint="Rule" width={240} value={ruleInput} setValue={setRuleInput}/>
                         <InputField id={"weight"} hint="Weight" width={100} value={weightInput} setValue={setWeightInput}/>
                         <InputField id={"priority"} hint="Priority" width={100} value={priorityInput} setValue={setPriorityInput}/>

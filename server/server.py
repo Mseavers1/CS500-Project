@@ -143,6 +143,21 @@ class ServerAPI:
             # If there’s an unexpected failure
             raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the rule.")
 
+        @self.app.post("/api/rules/del")
+        async def del_rule(q: AddQuestion):
+
+            if not ([q.rule_id, q.type_name, q.topic_name]):
+                raise HTTPException(status_code=400, detail="All fields must be provided")
+
+            resp = await self.database.del_rule(q.rule_id, q.topic_name, q.type_name)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while deleting the rule.")
+
+
         @self.app.post("/api/question-types/add")
         async def add_question_type(type_name: AddItemName):
             resp = await self.database.add_question_types(type_name.itemName)
