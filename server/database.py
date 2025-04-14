@@ -4,10 +4,10 @@ import os
 from datetime import datetime
 
 from dotenv import load_dotenv
-from sqlalchemy import and_
+from sqlalchemy import and_, distinct
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from cryptography.fernet import Fernet
 import bcrypt
 from sqlalchemy.future import select
@@ -202,6 +202,78 @@ class Database:
                 session.add(new_q)
                 await session.commit()
             return {"successful": True}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def get_question_types_with_rules(self):
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(
+                        distinct(QuestionTypeTable.type_name),
+                        TopicTable.topic_name
+                    )
+                    .join(QuestionTable, QuestionTable.question_type_id == QuestionTypeTable.type_id)
+                    .join(RuleTable, RuleTable.rule_id == QuestionTable.rule_id)
+                    .join(TopicTable, TopicTable.topic_id == QuestionTable.topic_id)
+                )
+
+                type_topic_pairs = [{"type_name": row[0], "topic_name": row[1]} for row in result.all()]
+                return {"successful": True, "types": type_topic_pairs}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+    async def delete_all_rules_by_topic_and_type(self, topic_name: str, type_name: str):
+        try:
+            async with self.get_db() as session:
+                # Step 1: Get all matching QuestionTable entries
+                result = await session.execute(
+                    select(QuestionTable)
+                    .options(joinedload(QuestionTable.rule))  # preload rule relationship
+                    .join(TopicTable, QuestionTable.topic_id == TopicTable.topic_id)
+                    .join(QuestionTypeTable, QuestionTable.question_type_id == QuestionTypeTable.type_id)
+                    .where(
+                        and_(
+                            TopicTable.topic_name == topic_name,
+                            QuestionTypeTable.type_name == type_name
+                        )
+                    )
+                )
+                questions_to_delete = result.scalars().all()
+
+                # Collect all associated rule_ids
+                rule_ids = {q.rule_id for q in questions_to_delete}
+
+                # Step 2: Delete matching QuestionTable entries
+                for question in questions_to_delete:
+                    await session.delete(question)
+
+                # Step 3: Check if each rule is still referenced by other topic/type combinations
+                for rule_id in rule_ids:
+                    # Check if the rule is associated with any other question
+                    result = await session.execute(
+                        select(QuestionTable).where(QuestionTable.rule_id == rule_id)
+                    )
+                    still_exists = result.scalar_one_or_none()
+
+                    if not still_exists:
+                        # If rule is no longer associated with any questions, delete it from RuleTable
+                        rule = await session.get(RuleTable, rule_id)
+                        if rule:
+                            # Step 4: Check if the rule is associated with any other topic/type combination
+                            result = await session.execute(
+                                select(QuestionTable)
+                                .join(TopicTable, QuestionTable.topic_id == TopicTable.topic_id)
+                                .join(QuestionTypeTable, QuestionTable.question_type_id == QuestionTypeTable.type_id)
+                                .where(QuestionTable.rule_id == rule_id)
+                            )
+                            if result.scalar_one_or_none() is None:
+                                await session.delete(rule)
+
+                await session.commit()
+                return {"successful": True}
 
         except Exception as e:
             return {"successful": False, "message": str(e)}
