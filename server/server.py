@@ -81,7 +81,8 @@ class ServerAPI:
             if "successful" in resp:
                 return resp
 
-            raise HTTPException(status_code=500, detail="An unexpected error occurred while removing the question type.")
+            raise HTTPException(status_code=500,
+                                detail="An unexpected error occurred while removing the question type.")
 
         @self.app.post("/api/topics/del")
         async def delete_topic(topic_name: AddItemName):
@@ -157,6 +158,25 @@ class ServerAPI:
             # If there’s an unexpected failure
             raise HTTPException(status_code=500, detail="An unexpected error occurred while deleting the rule.")
 
+        @self.app.post("/api/question/types/del")
+        async def del_all_question_types(r: GetQuestionRules):
+            resp = await self.database.delete_all_rules_by_topic_and_type(r.topic_name, r.type_name)
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the question type.")
+
+        @self.app.get("/api/question/types")
+        async def get_all_question_types():
+            resp = await self.database.get_question_types_with_rules()
+
+            if "successful" in resp:
+                return resp
+
+            # If there’s an unexpected failure
+            raise HTTPException(status_code=500, detail="An unexpected error occurred while adding the question type.")
 
         @self.app.post("/api/question-types/add")
         async def add_question_type(type_name: AddItemName):

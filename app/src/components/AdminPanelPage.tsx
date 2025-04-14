@@ -1,7 +1,7 @@
 import React, {useEffect} from "react";
 import axios from "axios";
 import {ListCard} from "./ListCard";
-import {QuestionCard} from "./QuestionCard";
+import {QuestionCard, TypeTopicPair} from "./QuestionCard";
 import InputField from "./InputField";
 import Button from "./Button";
 import Selector from "./Selector";
@@ -23,7 +23,7 @@ export default function AdminPanelPage() {
     const [questionTypesItems, setQuestionTypesItems] = React.useState<string[]>([]);
     const [questionTypeInput, setQuestionTypeInput] = React.useState("");
 
-    const [questionItems, setQuestionItems] = React.useState<string[]>([]);
+    const [questionItems, setQuestionItems] = React.useState<TypeTopicPair[]>([]);
     const [questionInput, setQuestionInput] = React.useState("");
 
     const [questionFormOpen, setQuestionFormOpen] = React.useState(false);
@@ -262,7 +262,44 @@ export default function AdminPanelPage() {
         }
     }
 
-    const addQuestion = () => {
+    const getAllType = async () => {
+        try {
+            const response = await axios.get(
+                "http://127.0.0.1" +
+                ":8000/api/question/types",
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            setQuestionItems(response.data.types);
+
+            return response.data.types;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const delAllType = async (pair: TypeTopicPair) => {
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1" +
+                ":8000/api/question/types/del",
+                {topic_name: pair.topic_name, type_name: pair.type_name},
+                {headers: {"Content-Type": "application/json"}}
+            );
+
+            setQuestionItems(await getAllType());
+
+            return response.data.successful;
+
+        } catch (error) {
+            alert("Error:" + error);
+            return null;
+        }
+    }
+
+    const addQuestion = async () => {
 
         if (selectedOption === "" || selectedOption === "Select type") return;
 
@@ -279,7 +316,10 @@ export default function AdminPanelPage() {
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
 
                     <div className="absolute top-2 right-2">
-                        <Button name={"X"} onClick={() => {setQuestionFormOpen(false);}} backgroundColor={"red-500"} width={24} px={8} py={2}/>
+                        <Button name={"X"} onClick={async () => {
+                            await getAllType();
+                            setQuestionFormOpen(false);
+                        }} backgroundColor={"red-500"} width={24} px={8} py={2}/>
                     </div>
 
                     <p className="font-bold text-xl text-black">Create new Question</p>
@@ -419,10 +459,10 @@ export default function AdminPanelPage() {
                     items={questionItems}
                     value={selectedOption}
                     setValue={setSelectedOption}
-                    hint="Select type"
+                    hint="Select a type"
                     setList={setQuestionItems}
-                    getDBFunction={getQType}
-                    delDBFunction={delQType}
+                    getDBFunction={getAllType}
+                    delDBFunction={delAllType}
                     addFunction={addQuestion}
                     options={options}
                 />
