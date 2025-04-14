@@ -1,13 +1,20 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
+import {TypeTopicPair} from "./QuestionCard";
+import axios from "axios";
+import Button from "./Button";
+import {useNavigate} from "react-router-dom";
 
 function TopicSelector () {
 
     const [selectedTopic, setSelectedTopic] = React.useState("");
+    const [topics, setTopics] = React.useState<{topic_name: string; type_name: string[]}[]>([]);
+    const [selectedTypes, setSelectedTypes] = React.useState<string[]>([]);
+    const nav = useNavigate();
 
     type CardProps = {
         title: string;
-        description: string;
+        types: string[]
     };
 
     type SubCardProps = {
@@ -15,16 +22,53 @@ function TopicSelector () {
         types: string[];
     };
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get("http://127.0.0.1:8000/api/question/types", {
+                    headers: { "Content-Type": "application/json" },
+                });
+
+                const rawList: { topic_name: string; type_name: string }[] = response.data.types;
+
+                if (response.data.successful) {
+                    // Group by topic_name
+                    const topicMap: Record<string, string[]> = {};
+
+                    for (const { topic_name, type_name } of rawList) {
+                        if (!topicMap[topic_name]) {
+                            topicMap[topic_name] = [];
+                        }
+                        topicMap[topic_name].push(type_name);
+                    }
+
+                    const grouped = Object.entries(topicMap).map(([topic_name, type_name]) => ({
+                        topic_name,
+                        type_name,
+                    }));
+
+                    setTopics(grouped);
+                } else {
+                    alert(response.data.message);
+                }
+            } catch (error) {
+                alert("Error: " + error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+
     // Card to hold TOPIC items (grid)
-    const Card: React.FC<CardProps> = ({ title, description }) => {
+    const Card: React.FC<CardProps> = ({ title, types }) => {
         return (
             <div className="flex flex-col gap-3 bg-white rounded-2xl text-center items-center shadow-lg p-5 max-w-[300px]">
                 <h2 className="text-xl font-bold">{title}</h2>
                 <hr className="border-[1px] border-gray-300 w-full"/>
-                <p className="text-gray-600">{description}</p>
 
                 <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-[50%]hover:bg-blue-500 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onClick={() => {setSelectedTopic(title)}}>
+                        onClick={() => {setSelectedTopic(title); setSelectedTypes(types)}}>
                     Select
                 </button>
 
@@ -67,10 +111,11 @@ function TopicSelector () {
     const topicSelector = () => {
         return (
             <div className="grid grid-cols-4 gap-4">
-                <Card title="Algebra" description="Learn to solve equations, simplify expressions, and more!" />
-                <Card title="Calculus" description="Explore derivatives, integrals, and other advanced concepts!" />
-                <Card title="Geometry" description="Study shapes, angles, and geometric properties!" />
-                <Card title="Statistics" description="Understand data analysis, probability, and more!" />
+                {topics.map((item, idx) => (
+                    <div key={idx} className="">
+                        <Card title={item.topic_name} types={item.type_name}/>
+                    </div>
+                ))}
             </div>
         );
     };
@@ -93,28 +138,37 @@ function TopicSelector () {
                     </button>
                 </div>
 
-                {/* Left Arrow */}
+                {/* Left Arrow
                 <div
                     className="flex flex-col gap-3 bg-white rounded-2xl text-center items-center shadow-lg p-5 max-w-[300px]">
                     <div className="flex items-center justify-start w-full">
-                    <ChevronLeftIcon className="w-6 h-6 text-gray-500"/>
+                        <ChevronLeftIcon className="w-6 h-6 text-gray-500"/>
                     </div>
-                </div>
+                </div> */}
 
-                {/* 3 Choices */}
+                {/* 3 Choices
                 <div className="flex flex-row gap-5">
                     <SubCard title="Systems of Equations" types={["Word Problems", "Solve for variable"]}/>
                     <SubCard title="Systems of Equations" types={["Word Problems", "Solve for variable"]}/>
                     <SubCard title="Systems of Equations" types={["Word Problems", "Solve for variable"]}/>
+                </div> */}
+
+                <div className="grid grid-cols-4 gap-4">
+                    {selectedTypes.map((item, idx) => (
+                        <div key={idx} className="">
+                            <SubCard title={item} types={["Solve"]}/>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Right Arrow */}
+
+                {/* Right Arrow
                 <div
                     className="flex flex-col gap-3 bg-white rounded-2xl text-center items-center shadow-lg p-5 max-w-[300px]">
                     <div className="flex items-center justify-start w-full">
                         <ChevronRightIcon className="w-6 h-6 text-gray-500"/>
                     </div>
-                </div>
+                </div> */}
             </div>
         );
     };
@@ -122,6 +176,13 @@ function TopicSelector () {
 
     return (
         <div className="">
+
+            <div className="absolute top-2 right-2">
+                <Button name={"Back"} onClick={() => {
+                    nav("/dashboard")
+                }}/>
+            </div>
+
 
             {topicSelector()}
 

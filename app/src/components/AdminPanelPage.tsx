@@ -5,6 +5,7 @@ import {QuestionCard, TypeTopicPair} from "./QuestionCard";
 import InputField from "./InputField";
 import Button from "./Button";
 import Selector from "./Selector";
+import {useNavigate} from "react-router-dom";
 
 export default function AdminPanelPage() {
 
@@ -41,6 +42,8 @@ export default function AdminPanelPage() {
     const [variableInput, setVariableInput] = React.useState("");
     const [ruleInput, setRuleInput] = React.useState("");
     const [matches, setMatches] = React.useState<Match[]>([]);
+
+    const nav = useNavigate();
 
     const addTopic = async () => {
 
@@ -422,6 +425,10 @@ export default function AdminPanelPage() {
 
     return (
         <div className="flex flex-col justify-center text-center gap-5">
+
+            <div className="absolute top-2 right-2">
+                <Button name={"Back"} onClick={() => {nav("/dashboard")}}/>
+            </div>
 
             <p className="text-[40px]"> Admin Panel </p>
 
