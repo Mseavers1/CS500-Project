@@ -2,6 +2,8 @@ import React, {useEffect, useState} from "react";
 import "katex/dist/katex.min.css";
 import { InlineMath, BlockMath } from "react-katex";
 import axios from "axios";
+import {useLocation, useNavigate} from "react-router-dom";
+import Button from "./Button";
 
 function QuestionSolver () {
 
@@ -10,11 +12,15 @@ function QuestionSolver () {
     const [complexityValue, setComplexity] = useState<number>(3);
     const [answer, setAnswer] = useState<string>("");
 
+    const location = useLocation();
+    const { difficulty, q_type, topic} = location.state || {};
+    const nav = useNavigate();
+
     const generateProblem = async (complexity: number) => {
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/problem/generate/",
-                { complexity },
+                { difficulty: difficulty, q_type: q_type, topic: topic },
                 { headers: { "Content-Type": "application/json" } }
             );
 
@@ -48,6 +54,12 @@ function QuestionSolver () {
 
     return (
         <div className="flex flex-col text-center items-center gap-5">
+
+            <div className="absolute top-2 right-2">
+                <Button name={"Back"} onClick={() => {
+                    nav("/selector")
+                }}/>
+            </div>
 
             <div className="slider-container" style={{padding: "20px", textAlign: "center"}}>
                 <h2>Complexity: {complexityValue}</h2>
@@ -92,8 +104,7 @@ function QuestionSolver () {
                         // Check if answer matches solution
                         if (a == solution) {
                             alert("Correct!")
-                        }
-                        else {
+                        } else {
                             alert("Incorrect. Correct answer was: " + solution)
                         }
 

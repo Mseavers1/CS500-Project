@@ -81,12 +81,14 @@ function TopicSelector () {
 
         type typeButtonProp = {
             b_name: string;
+            q_type: string;
         };
 
-        const TypeButtons: React.FC<typeButtonProp> = ({ b_name }) => {
+        const TypeButtons: React.FC<typeButtonProp> = ({ b_name, q_type }) => {
             return (
                 <button
                     className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onClick={() => {nav("/solve", { state: { difficulty: "easy", q_type: q_type, topic: selectedTopic} }); }}
                 >
                     {b_name}
                 </button>
@@ -100,7 +102,7 @@ function TopicSelector () {
                 <hr className="border-[1px] border-gray-300 w-full"/>
 
                 {types.map((name, index) => (
-                    <TypeButtons key={index} b_name={name} />
+                    <TypeButtons key={index} b_name={name} q_type={title} />
                 ))}
 
             </div>

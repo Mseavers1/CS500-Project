@@ -194,7 +194,7 @@ export default function AdminPanelPage() {
             );
 
             if (response && response.data.successful) {
-                alert("Rule added!");
+                //alert("Rule added!");
 
                 // Add to Question Table
                 const resp = await axios.post(
@@ -205,7 +205,7 @@ export default function AdminPanelPage() {
                 );
 
                 if (resp && resp.data.successful) {
-                    alert("Successfully added question!");
+                    //alert("Successfully added question!");
 
                     // Clear inputs
                     setCostInput("")

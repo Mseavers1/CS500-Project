@@ -1,8 +1,7 @@
-import React, {useEffect, useState} from 'react';
 import './App.css';
 
 import HomePage from "./components/HomePage";
-import {BrowserRouter as Router, Routes, Route, useNavigate} from 'react-router-dom';
+import {Routes, Route} from 'react-router-dom';
 import TopicSelector from "./components/TopicSelector";
 import QuestionSolver from "./components/QuestionSolver";
 import ProfilePage from "./components/ProfilePage";

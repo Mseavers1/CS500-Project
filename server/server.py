@@ -28,6 +28,8 @@ from email.mime.multipart import MIMEMultipart
 import secrets
 import string
 
+from problem_generator import QuestionGenerator
+
 
 def generate_code(length: int = 5) -> str:
     characters = string.ascii_letters + string.digits
@@ -251,25 +253,33 @@ class ServerAPI:
         @self.app.post("/api/problem/generate")
         async def generate_problem(gen: ProblemGenerator):
 
-            cfg = CFG()
+            # Generate problem
+            generator = await QuestionGenerator.create(self.database, gen.topic, gen.q_type)
 
-            cfg.add_rule('S', 'E=E', 0, 1, 1)
-            cfg.add_rule('E', 'T', 0, 0.5, 1)
-            cfg.add_rule('E', 'E+T', 2, 0.5, 1)
-            cfg.add_rule('E', 'E-T', 2, 0.5, 1)
-            cfg.add_rule('E', 'E*(T)', 10, 0.5, 1)
-            cfg.add_rule('E', 'T*(E)', 10, 0.5, 1)
-            cfg.add_rule('E', '\\frac{T}{E}', 20, 0.5, 1)
-            cfg.add_rule('E', '\\frac{E}{T}', 20, 0.5, 1)
-            cfg.add_rule('E', '\\frac{E}{E}', 40, 0.5, 1)
-            cfg.add_rule('T', 'C', 0, 0.5, 2)
-            cfg.add_rule('T', 'x', 1, 0.5, 2)
-            cfg.add_rule('T', '(C*x)', 2, 0.5, 2)
-            cfg.add_rule('C', 'c', 0, 0.5, 2)
-            cfg.add_rule('C', '\\frac{c}{c}', 8, 0.5, 2)
+
+
+
+
+            # cfg = CFG()
+
+            # cfg.add_rule('S', 'E=E', 0, 1, 1)
+            # cfg.add_rule('E', 'T', 0, 0.5, 1)
+            # cfg.add_rule('E', 'E+T', 2, 0.5, 1)
+            # cfg.add_rule('E', 'E-T', 2, 0.5, 1)
+            # cfg.add_rule('E', 'E*(T)', 10, 0.5, 1)
+            # cfg.add_rule('E', 'T*(E)', 10, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{T}{E}', 20, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{E}{T}', 20, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{E}{E}', 40, 0.5, 1)
+            # cfg.add_rule('T', 'C', 0, 0.5, 2)
+            # cfg.add_rule('T', 'x', 1, 0.5, 2)
+            # cfg.add_rule('T', '(C*x)', 2, 0.5, 2)
+            # cfg.add_rule('C', 'c', 0, 0.5, 2)
+            # cfg.add_rule('C', '\\frac{c}{c}', 8, 0.5, 2)
             # cfg.add_rule('C', 'd', 8, 0.5, 2)
 
-            problem = cfg.generate(gen.complexity)
+            # problem = cfg.generate(gen.complexity)
+            problem = generator.generate()
             solutionProblem = problem
 
             print(problem)
