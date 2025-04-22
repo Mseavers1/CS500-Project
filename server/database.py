@@ -20,9 +20,12 @@ from models.database.topic_db import TopicTable
 from models.database.rule_db import RuleTable
 from models.database.question_type_db import QuestionTypeTable
 from models.database.question_db import QuestionTable
+from models.database.transaction_log_db import TransactionLogTable
 
 load_dotenv()
 
+
+# PostgreSQL
 
 def hash_data(data: str) -> str:
     salt = bcrypt.gensalt()
@@ -70,6 +73,48 @@ class Database:
         encrypted_bytes = base64.b64decode(data.encode('utf-8'))
         decrypted = self.fernet.decrypt(encrypted_bytes)
         return decrypted.decode('utf-8')
+
+    async def get_all_logged_data(self):
+
+        try:
+            async with self.get_db() as session:
+                result = await session.execute(
+                    select(TransactionLogTable)
+                )
+
+                matches = result.scalars().all()
+
+            return {"successful": True, "matches": matches}
+
+        except Exception as e:
+            return {"successful": False, "message": str(e)}
+
+
+    async def log_data(self, user_id, topic_id, question_type_id, timestamp, dif, is_correct, time_taken, attempts,
+                       skipped):
+        try:
+            async with self.get_db() as session:
+
+                data = TransactionLogTable(
+                    user_id=user_id,
+                    topic_id=topic_id,
+                    question_type_id=question_type_id,
+                    timestamp=timestamp,
+                    difficulty=dif,
+                    is_correct=is_correct,
+                    time_taken=time_taken,
+                    attempts=attempts,
+                    skipped=skipped
+                )
+
+                session.add(data)
+                await session.commit()
+
+            return {"successful": True}
+
+        except Exception as e:
+            print(e)
+            return {"successful": False, "message": str(e)}
 
     async def add_topic(self, topic_name: str):
 
