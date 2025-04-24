@@ -4,42 +4,91 @@ import { InlineMath, BlockMath } from "react-katex";
 import axios from "axios";
 import {useLocation, useNavigate} from "react-router-dom";
 import Button from "./Button";
+import {useUser} from "./UserContext";
 
 function QuestionSolver () {
 
     const [problem, setProblem] = useState<string | null>(null);
     const [solution, setSolution] = useState<string | null>(null);
-    const [complexityValue, setComplexity] = useState<number>(3);
+    const [dif, setDif] = useState<number>(2);
     const [answer, setAnswer] = useState<string>("");
+    const [attempts, setAttempts] = useState<number>(0);
+    const [startTime, setStartTime] = useState<number>(0);
 
     const location = useLocation();
-    const { difficulty, q_type, topic} = location.state || {};
+    const { q_type, topic} = location.state || {};
     const nav = useNavigate();
+    const { username } = useUser();
 
-    const generateProblem = async (complexity: number) => {
+    const generateProblem = async () => {
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/problem/generate/",
-                { difficulty: difficulty, q_type: q_type, topic: topic },
+                { username: username, q_type: q_type, topic: topic },
                 { headers: { "Content-Type": "application/json" } }
             );
 
             //alert(response.data.output)
-
             setProblem(response.data.problem);
             setSolution(response.data.solution);
+            setDif(response.data.difficulty);
+            setStartTime(Date.now())
         } catch (error) {
-            console.error("Error fetching problem:", error);
+            alert(error)
         }
     };
 
-    useEffect(() => {
-        generateProblem(complexityValue);
-    }, []);
-
-    const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setComplexity(Number(event.target.value));
+    type LogPayload = {
+        username: string;
+        topic_name: string;
+        type_name: string;
+        dif: number;
+        is_correct: boolean;
+        time_taken: number;
+        attempts: number;
+        skipped: boolean;
     };
+
+    const recordLog = async (is_correct: boolean, skipped: boolean) => {
+        try {
+            let time_taken = (Date.now() - startTime) / 1000;
+
+            const payload: LogPayload = {
+                username: String(username),
+                type_name: String(q_type),
+                topic_name: String(topic),
+                dif: Number(dif),
+                is_correct: Boolean(is_correct),
+                time_taken: Number(time_taken),
+                attempts: Number(attempts),
+                skipped: Boolean(skipped),
+            };
+
+            const response = await axios.post(
+                "http://127.0.0.1:8000/api/problem/log/",
+                payload,
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+
+            if (!response.data) alert("Failed to log message")
+
+            setAttempts(0);
+
+        } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+            console.error("Validation Error:", error.response.data);
+            alert(`Error: ${JSON.stringify(error.response.data, null, 2)}`);
+        } else {
+            console.error("Unexpected Error:", error);
+            alert("An unexpected error occurred.");
+        }
+    }
+    }
+
+    useEffect(() => {
+        generateProblem();
+    }, []);
 
     function displayProblem(problem: string | null) {
 
@@ -61,19 +110,8 @@ function QuestionSolver () {
                 }}/>
             </div>
 
-            <div className="slider-container" style={{padding: "20px", textAlign: "center"}}>
-                <h2>Complexity: {complexityValue}</h2>
-
-                {/* Slider */}
-                <input
-                    type="range"
-                    min="0"
-                    max="200"
-                    value={complexityValue}
-                    onChange={handleSliderChange}
-                    style={{width: "80%"}}
-                />
-            </div>
+            <p className="text-[40px]"> Current Difficulty: {dif} </p>
+            <p className="text-[20px]"> Solution: {solution} </p>
 
             <p className="text-2xl font-bold text-black">Solve for X</p>
             <p className="text-xl text-black"> {displayProblem(problem)} </p>
@@ -102,13 +140,50 @@ function QuestionSolver () {
                         }
 
                         // Check if answer matches solution
-                        if (a == solution) {
-                            alert("Correct!")
-                        } else {
-                            alert("Incorrect. Correct answer was: " + solution)
+                        setAttempts(attempts + 1);
+
+                        const match = solution?.match(/^\[(.+)\]$/);
+                        let value = match ? match[1] : null;
+
+                        // Check if answer is a fraction, if so, allow answer to be in decimal
+                        let value_decimal = null
+                        if (value?.includes("/")) {
+                            const [numerator, denominator] = value.split("/").map(Number);
+                            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                                value_decimal = numerator / denominator;
+                            }
+                        } else if (value !== null && !isNaN(Number(value))) {
+                            value_decimal = parseFloat(value);
                         }
 
-                        generateProblem(complexityValue);
+                        if (solution == "No Solution") {
+                            value = solution
+                        }
+
+                        //alert(number?.toString() + " " + a)
+                        let a_decimal = null;
+                        if (a?.includes("/")) {
+                            const [numerator, denominator] = a.split("/").map(Number);
+                            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                                a_decimal = numerator / denominator;
+                            }
+                        } else if (value !== null && !isNaN(Number(value))) {
+                            a_decimal = parseFloat(value);
+                        }
+
+
+                        if (a == value?.toString() || (value_decimal != null && a == value_decimal.toString()) || (a_decimal != null && a_decimal == value_decimal)) {
+                            alert("Correct!")
+                            setAnswer("");
+
+                            recordLog(true, false);
+                            generateProblem();
+                        } else if (attempts >= 3) {
+                            alert("Incorrect (3 attempts used). Correct answer was: " + solution);
+
+                            recordLog(false, false);
+                            generateProblem();
+                        }
                     }}>
                     Submit
                 </button>
@@ -128,7 +203,8 @@ function QuestionSolver () {
                 <button
                     className="bg-blue-300 text-white px-4 py-2 rounded-lg hover:bg-blue-400 active:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={() => {
-                        generateProblem(complexityValue);
+                        recordLog(false, true);
+                        generateProblem();
                     }}>
                     Skip
                 </button>

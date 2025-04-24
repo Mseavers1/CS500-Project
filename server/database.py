@@ -89,22 +89,73 @@ class Database:
         except Exception as e:
             return {"successful": False, "message": str(e)}
 
-
-    async def log_data(self, user_id, topic_id, question_type_id, timestamp, dif, is_correct, time_taken, attempts,
-                       skipped):
+    async def get_logs_by_user_topic_type(self, user_id: int, topic_name: str, question_type_name: str):
         try:
             async with self.get_db() as session:
+                result = await session.execute(
+                    select(TransactionLogTable)
+                    # Use the relationship attribute for the join to UserTable
+                    .join(TransactionLogTable.user)
+                    # CORRECTED: Use the relationship attributes .topic and .question_type
+                    .join(TransactionLogTable.topic)  # <-- Corrected line
+                    .join(TransactionLogTable.question_type)  # <-- Corrected line
+                    .where(
+                        UserTable.user_id == user_id,
+                        TopicTable.topic_name == topic_name,
+                        QuestionTypeTable.type_name == question_type_name
+                    )
+                )
 
+                matches = result.scalars().all()
+
+            return {"successful": True, "matches": matches}
+
+        except Exception as e:
+            # It's good practice to log the full traceback for better debugging
+            # import traceback
+            # print(traceback.format_exc())
+            return {"successful": False, "message": str(e)}
+
+    async def log_data(self, user_id, topic_name, question_type_name, dif, is_correct, time_taken, attempts,
+                       skipped):
+
+        try:
+            async with self.get_db() as session:
+                # Get the user_id
+                user_result = await session.execute(
+                    select(UserTable).where(UserTable.user_id == user_id)
+                )
+                user = user_result.scalar_one_or_none()
+                if not user:
+                    return {"successful": False, "message": "User not found"}
+
+                # Get the topic_id
+                topic_result = await session.execute(
+                    select(TopicTable).where(TopicTable.topic_name == topic_name)
+                )
+                topic = topic_result.scalar_one_or_none()
+                if not topic:
+                    return {"successful": False, "message": "Topic not found"}
+
+                # Get the question_type_id
+                type_result = await session.execute(
+                    select(QuestionTypeTable).where(QuestionTypeTable.type_name == question_type_name)
+                )
+                q_type = type_result.scalar_one_or_none()
+                if not q_type:
+                    return {"successful": False, "message": "Question type not found"}
+
+                # Now log the data using the IDs
                 data = TransactionLogTable(
-                    user_id=user_id,
-                    topic_id=topic_id,
-                    question_type_id=question_type_id,
-                    timestamp=timestamp,
+                    user_id=user.user_id,
+                    topic_id=topic.topic_id,
+                    question_type_id=q_type.type_id,
+                    timestamp=datetime.now(),
                     difficulty=dif,
                     is_correct=is_correct,
                     time_taken=time_taken,
                     attempts=attempts,
-                    skipped=skipped
+                    skipped=skipped,
                 )
 
                 session.add(data)
@@ -113,7 +164,7 @@ class Database:
             return {"successful": True}
 
         except Exception as e:
-            print(e)
+            print(f"ERROR: {e}")
             return {"successful": False, "message": str(e)}
 
     async def add_topic(self, topic_name: str):
@@ -485,7 +536,7 @@ class Database:
             query = select(UserTable)
 
             if user_id is not None and user_id > 0:
-                query = query.filter(UserTable.id == user_id)
+                query = query.filter(UserTable.user_id == user_id)
 
             result = await session.execute(query)
             users = result.scalars().all()  # Fetch all potential matches
@@ -504,7 +555,7 @@ class Database:
 
             if u:
                 return {
-                    "user_id": user.id,
+                    "user_id": user.user_id,
                     "user_email": self.decrypt_data(user.user_email),
                     "user_username": self.decrypt_data(user.user_username),
                     "user_password": user.user_password,
@@ -590,7 +641,7 @@ class Database:
             async with self.get_db() as session:
                 session.add(new_user)
                 await session.commit()
-            return {"message": "User created successfully!", "user_id": new_user.id}
+            return {"message": "User created successfully!", "user_id": new_user.user_id}
 
         except Exception as e:
             return {"error": "An unexpected error occurred.", "details": str(e)}

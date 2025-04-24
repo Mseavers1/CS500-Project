@@ -20,7 +20,8 @@ export default function Button({ name, onClick, backgroundColor = "blue-500", co
                 paddingLeft: `${px}px`,
                 paddingRight: `${px}px`,
                 paddingTop: `${py}px`,
-                paddingBottom: `${py}px`
+                paddingBottom: `${py}px`,
+                outline: 'none'
             }}
             onClick={onClick}>
             {name}

@@ -714,11 +714,11 @@ function HomePage() {
     return (
         <div className="flex flex-col items-center justify-center">
 
-            <div className="font-poppins font-bold text-6xl">
+            <div className="font-nunito font-bold text-6xl">
                 M.A.P
             </div>
 
-            <div className="font-poppins text-2xl">
+            <div className="font-nunito text-2xl">
                 A Math Advancement Platform
             </div>
 

@@ -88,7 +88,7 @@ function TopicSelector () {
             return (
                 <button
                     className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 active:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onClick={() => {nav("/solve", { state: { difficulty: "easy", q_type: q_type, topic: selectedTopic} }); }}
+                    onClick={() => {nav("/solve", { state: {q_type: q_type, topic: selectedTopic} }); }}
                 >
                     {b_name}
                 </button>
@@ -179,17 +179,9 @@ function TopicSelector () {
     return (
         <div className="">
 
-            <div className="absolute top-2 right-2">
-                <Button name={"Back"} onClick={() => {
-                    nav("/dashboard")
-                }}/>
-            </div>
-
-
             {topicSelector()}
 
             {selectedTopic === "" ? "" : subtopicSelector()}
-
 
         </div>
     )

@@ -10,6 +10,24 @@ maxUse = 100
 
 database = Database()
 
+p_init = 0.2  # Initial knowledge
+p_transit = 0.1  # Probability of learning (transition)
+p_slip = 0.1  # Error when knowing
+p_guess = 0.2  # Correct by guessing when not knowing
+
+
+def update_bkt(p_k_prev, correct, p_transit, p_slip, p_guess):
+    if correct:
+        num = p_k_prev * (1 - p_slip)
+        den = p_k_prev * (1 - p_slip) + (1 - p_k_prev) * p_guess
+    else:
+        num = p_k_prev * p_slip
+        den = p_k_prev * p_slip + (1 - p_k_prev) * (1 - p_guess)
+
+    p_k_t = (num / den) if den != 0 else 0.0
+    p_k_t = p_k_t + (1 - p_k_t) * p_transit  # Add transition
+    return round(p_k_t, 4)
+
 
 class UserTypes:
 
@@ -75,6 +93,8 @@ class UserTypes:
                 # lower by 1
                 return max(cur_dif - 1, 1), 0
 
+        p_k_prev = p_init
+
         for log in range(generated):
 
             # Get current time range
@@ -109,16 +129,22 @@ class UserTypes:
 
             time_taken = calculate_time_taken(current_time_addition, attempts)
 
+            p_k_t = update_bkt(p_k_prev, is_correct, p_transit, p_slip, p_guess)
+
             # Add user
             resp = await database.log_data(user_id=self.user_id, topic_id=16, question_type_id=11,
                                            timestamp=datetime.now(),
                                            dif=current_dif, is_correct=is_correct,
                                            time_taken=time_taken,
-                                           attempts=attempts, skipped=skip)
+                                           attempts=attempts, skipped=skip, p_l_prev=p_k_prev,
+                                           p_l_t=p_k_t)
 
             # Calculate new dif
             current_dif, current_dif_attempts = calculate_new_dif(attempts, skip, 1, current_dif_attempts, is_correct,
                                                                   current_dif)
+
+            # Set previous
+            p_k_prev = p_k_t
 
 
 class QuickLearner(UserTypes):
@@ -162,5 +188,6 @@ async def create_logs():
 
             await u.generate_user_logs(random.randint(minUse, maxUse))
             u_id += 1
+
 
 asyncio.run(create_logs())

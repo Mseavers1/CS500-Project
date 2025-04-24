@@ -8,7 +8,7 @@ export default {
         nunito: ["Nunito", "sans-serif"],
       },
       colors: {
-        primary_bars: "#1E3A8A",
+        primary_bars: "#113F5F",
         secondary_bars: "#3B82F6",
         accent: "#E63946",
         highlight: "#FACC15",

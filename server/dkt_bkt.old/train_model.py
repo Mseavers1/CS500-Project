@@ -1,9 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
 
 import torch
 from torch.utils.data import random_split, DataLoader
-from sklearn import metrics
 
 from database import Database
 import asyncio
@@ -27,7 +25,6 @@ async def get_data():
     for t in logs:
         grouped_logs[t.user_id].append({
             "id": t.id,
-            "question_id": t.topic_id * 100 + t.question_type_id,
             "user_id": t.user_id,
             "topic_id": t.topic_id,
             "question_type_id": t.question_type_id,
@@ -43,12 +40,7 @@ async def get_data():
 
 logs = asyncio.run(get_data())
 
-NUM_QTYPES = max([
-    log["topic_id"] * 100 + log["question_type_id"]
-    for logs in logs.values() for log in logs
-]) + 1
-
-dataset = DKTDataset(logs, max_seq_length=128, num_q=NUM_QTYPES)
+dataset = DKTDataset(logs, max_seq_length=128)
 
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
@@ -62,7 +54,7 @@ NUM_SUBTOPICS = max(log["question_type_id"] for logs_ in logs.values() for log i
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = DKT(num_topics=NUM_TOPICS, num_subtopics=NUM_SUBTOPICS, num_q=NUM_QTYPES, emb_size=128, hidden_size=256).to(device)
+model = DKT(num_topics=NUM_TOPICS, num_subtopics=NUM_SUBTOPICS, emb_size=128, hidden_size=256).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 aucs, losses = model.train_model(
@@ -70,5 +62,5 @@ aucs, losses = model.train_model(
     test_loader=val_loader,
     num_epochs=100,
     opt=optimizer,
-    ckpt_path="./checkpoints"
+    ckpt_path="../checkpoints"
 )

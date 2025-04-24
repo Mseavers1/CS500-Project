@@ -2,6 +2,6 @@ from pydantic import BaseModel, EmailStr
 
 
 class ProblemGenerator(BaseModel):
-    difficulty: str
+    username: str
     q_type: str
     topic: str

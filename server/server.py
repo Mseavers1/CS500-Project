@@ -4,9 +4,15 @@ import re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sympy import symbols, Eq, solve, sympify
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi import Request
+
 
 from cfg import CFG
 from database import Database
+from models.add_log_model import AddLog
 from models.add_question_model import AddQuestion
 from models.add_item_name_model import AddItemName
 from models.add_rule_model import AddRule
@@ -61,6 +67,16 @@ class ServerAPI:
 
     # Routes
     def setup_routes(self):
+
+        @self.app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "detail": jsonable_encoder(exc.errors()),
+                    "body": jsonable_encoder(exc.body),
+                },
+            )
 
         @self.app.post("/api/users/login/")
         async def user_login(user: UserLogin):
@@ -250,15 +266,28 @@ class ServerAPI:
 
             print(result)
 
+        @self.app.post("/api/problem/log")
+        async def add_log(log: AddLog):
+
+            user_id = await self.database.get_user(username=log.username)
+            user_id = user_id['user_id']
+
+            resp = await self.database.log_data(user_id, log.topic_name, log.type_name, log.dif,
+                                                log.is_correct, log.time_taken, log.attempts, log.skipped)
+
+            if "message" in resp:
+                raise HTTPException(status_code=500, detail=f"An error occurred: {resp['message']}")
+
+            if "successful" in resp:
+                return {"successful": resp["successful"]}
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred during registration.")
+
         @self.app.post("/api/problem/generate")
         async def generate_problem(gen: ProblemGenerator):
 
             # Generate problem
-            generator = await QuestionGenerator.create(self.database, gen.topic, gen.q_type)
-
-
-
-
+            generator = await QuestionGenerator.create(self.database, gen.username, gen.topic, gen.q_type)
 
             # cfg = CFG()
 
@@ -279,7 +308,7 @@ class ServerAPI:
             # cfg.add_rule('C', 'd', 8, 0.5, 2)
 
             # problem = cfg.generate(gen.complexity)
-            problem = generator.generate()
+            problem, dif = await generator.generate()
             solutionProblem = problem
 
             print(problem)
@@ -317,7 +346,7 @@ class ServerAPI:
 
             print(solution)
 
-            return {"problem": problem, "solution": str(solution)}
+            return {"problem": problem, "solution": str(solution), "difficulty": dif}
 
         @self.app.post("/api/recovery/email")
         async def send_recovery_email(email: RecoveryEmail):
