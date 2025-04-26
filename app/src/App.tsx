@@ -124,20 +124,20 @@ function App() {
     }
 
     return (
-        <div className="bg-gradient-to-b from-blue-100 to-white h-screen bg-background font-poppins">
+        <div className="bg-gradient-to-b from-blue-100 to-white min-h-screen bg-background font-poppins">
 
-            {/** Header **/}
+            {/* Header */}
             {showHeader()}
 
-            {/** Body (Pages) **/}
-            <div className="flex justify-center items-center h-full p-5">
+            {/* Body */}
+            <div className="p-5">
                 <Routes>
-                    <Route path="/" element={<HomePage/>}/>
+                    <Route path="/" element={<HomePage />} />
                     <Route
                         path="/dashboard"
                         element={
                             <ProtectedRoute>
-                                <ProfilePage/>
+                                <ProfilePage />
                             </ProtectedRoute>
                         }
                     />
@@ -168,11 +168,12 @@ function App() {
                 </Routes>
             </div>
 
-            {/** Footer **/}
+            {/* Footer */}
             {has_scrolled() ? footer() : ""}
 
         </div>
     )
+
 }
 
 export default App;

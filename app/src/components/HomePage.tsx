@@ -5,6 +5,7 @@ import { useUser } from './UserContext';
 import IError from "./IError";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import Button from "./Button";
 
 function HomePage() {
 
@@ -34,6 +35,7 @@ function HomePage() {
     const [recoveryComplete, setRecoveryComplete] = useState<boolean>(false);
 
     const {username, setUsername, authorization, setAuthorization} = useUser();
+    const [hasScrolled, setHasScrolled] = useState(false);
     const nav = useNavigate();
 
     useEffect(() => {
@@ -43,6 +45,39 @@ function HomePage() {
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/data").then(response => alert(response.data.data)).catch(error => console.log(error));
     }, [loginField1]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 500) {
+                setHasScrolled(true);
+            } else {
+                setHasScrolled(false);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+
+        // Clean up event listener
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const header = () => {
+        return (
+            <div className={`fixed flex flex-row items-center top-0 justify-between right-0 p-3 w-full text-white bg-primary_bars ${hasScrolled ? "opacity-100" : "opacity-0"} transition-opacity duration-500`}>
+                <p className="font-nunito text-2xl select-none"> M.A.P - A Math Advancement Platform </p>
+                <div className="flex flex-row items-center justify-center gap-5">
+                    <Button name="Top" backgroundColor="transparent" onClick={() => {handleScrollTo("top");}}/>
+                </div>
+            </div>
+        )
+    }
+
+    const handleScrollTo = (id: string) => {
+        const section = document.getElementById(id);
+        if (section) {
+            section.scrollIntoView({behavior: "smooth", block: "start"});
+        }
+    }
 
     function selectOption(option : string) : void {
         setSelectedItem(option);
@@ -712,78 +747,102 @@ function HomePage() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center">
+        <div className="w-full">
 
-            <div className="font-nunito font-bold text-6xl">
-                M.A.P
-            </div>
+            {/* Header */}
+            {header()}
 
-            <div className="font-nunito text-2xl">
-                A Math Advancement Platform
-            </div>
-
-            {showRecoveryMenu && (recovery())}
-            {showSignUp && (signUp())}
-
-            <div className="font-poppins flex flex-col p-5 gap-4">
-
-                <div className="flex flex-col gap-1">
-                    <input type="text" placeholder="Email, Username or Phone Number"
-                           value={loginField1} onChange={(e) => setLoginField1(e.target.value)}
-                           className={`border ${writeError("Input", errorSignIn) == "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500`}/>
-
-                    {writeError("Input", errorSignIn)}
+            {/* Login */}
+            <section id="top" className="min-h-screen flex flex-col items-center justify-center px-4 relative">
+                <div className="font-nunito font-bold text-6xl mb-2">
+                    M.A.P
                 </div>
 
+                <div className="font-nunito text-2xl mb-6">
+                    A Math Advancement Platform
+                </div>
 
-                <div className="flex flex-col gap-1">
-                    <div className="relative">
+                {showRecoveryMenu && recovery()}
+                {showSignUp && signUp()}
+
+                <div className="font-poppins flex flex-col p-5 gap-4">
+
+                    <div className="flex flex-col gap-1">
                         <input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Password"
-                            value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)}
-                            className={`border ${writeError("Input Password", errorSignIn) == "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                            type="text"
+                            placeholder="Email, Username or Phone Number"
+                            value={loginField1}
+                            onChange={(e) => setLoginField1(e.target.value)}
+                            className={`border ${writeError("Input", errorSignIn) === "" ? "border-gray-300" : "border-red-300"} rounded-lg px-5 py-2 w-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         />
-                        <button
-                            type="button"
-                            className="absolute inset-y-0 right-3 flex items-center"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
-                            {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
-                        </button>
+                        {writeError("Input", errorSignIn)}
                     </div>
 
-                    {writeError("Input Password", errorSignIn)}
+                    <div className="flex flex-col gap-1">
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Password"
+                                value={passwordLogin}
+                                onChange={(e) => setPasswordLogin(e.target.value)}
+                                className={`border ${writeError("Input Password", errorSignIn) === "" ? "border-gray-300" : "border-red-300"} rounded-lg w-[400px] px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-3 flex items-center"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
+                            </button>
+                        </div>
+                        {writeError("Input Password", errorSignIn)}
+                    </div>
+
+                    <div className="flex flex-row justify-between -mt-3">
+                        <a onClick={() => setShowRecoveryMenu(true)}
+                           className="text-blue-500 text-sm hover:underline cursor-pointer">
+                            Trouble Logging In?
+                        </a>
+                        <a onClick={() => setShowSignUp(true)}
+                           className="text-blue-500 text-sm hover:underline cursor-pointer">
+                            Sign Up
+                        </a>
+                    </div>
+
+                    <button
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        onClick={() => validateResponses(setErrorSignIn, false)}
+                    >
+                        Login
+                    </button>
                 </div>
 
-                <div className="flex flex-row justify-between -mt-3">
-                    <a onClick={() => setShowRecoveryMenu(true)}
-                       className="text-blue-500 text-sm text-center hover:underline cursor-pointer">
-                        Trouble Logging In?
-                    </a>
-
-                    <a onClick={() => setShowSignUp(true)}
-                       className="text-blue-500 text-sm text-center hover:underline cursor-pointer">
-                        Sign Up
-                    </a>
+                {/* Scroll down */}
+                <div className={`flex flex-col items-center mt-8 ${hasScrolled ? "opacity-0" : "opacity-100"} transition-opacity duration-500`}>
+                    <span className="text-gray-600">Scroll to Learn More</span>
+                    <ChevronDown size={40} className="text-gray-600 mt-2 slow-bounce" />
                 </div>
+            </section>
 
-                <button
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    onClick={() => validateResponses(setErrorSignIn, false)}>
-                    Login
-                </button>
+            {/* About */}
+            <section className="min-h-screen flex flex-col items-center justify-center px-4 md:px-12 lg:p-24">
+                <h2 className="text-4xl font-bold mb-4 font-nunito">About</h2>
+                <section className="text-center space-y-4">
+                    <p>This is the about section!</p>
+                </section>
+            </section>
 
-            </div>
-
-            <div className="flex flex-col items-center justify-center absolute bottom-0 mt-5">
-                Scroll to Learn More
-                <ChevronDown size={40} className={`text-gray-600`}/>
-            </div>
-
+            {/* Credits */}
+            <section className="min-h-screen flex flex-col items-center justify-center px-4 md:px-12 lg:p-24">
+                <h2 className="text-4xl font-bold mb-4 font-nunito">Credits</h2>
+                <section className="text-center space-y-4">
+                    <p>This is the credits section!</p>
+                </section>
+            </section>
 
         </div>
     )
+
 }
 
 export default HomePage;
