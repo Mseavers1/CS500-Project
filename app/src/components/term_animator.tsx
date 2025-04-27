@@ -24,8 +24,9 @@ function TermAnimator() {
     const [terms, setTerms] = useState<term[]>([]);
     const [usedTerms, setUsedTerms] = useState<termPlacement[]>([]);
     const textColors = [
-        "#333", "#444", "#222", "#1a1a1a", "#555", "#000", "#e6e6e6",
-        "#a2d1f7", "#f5e1a4", "#f4a5c2", "#9bcf8d", "#f0f0f0",
+        //"#333", "#444", "#222", "#1a1a1a", "#555", "#000", "#e6e6e6",
+        "#a2d1f7", "#f5e1a4", "#f4a5c2", "#9bcf8d", "#f0f0f0","#c3a2f7", "#AAA",
+        "#a4f5e1", "#f7c3a2", "#d1a2f7", "#a2f7c3", "#f7a2d1", "#e1f5a4", "#a4e1f5", "#cccccc", "#dddddd"
     ];
 
     useEffect(() => {
@@ -54,8 +55,13 @@ function TermAnimator() {
                 const nle_opacity = new NormalizedLinearEquation(15, 25, 0.2, 0.5);
                 const nle_blur = new NormalizedLinearEquation(15, 25, 1, 2);
 
-                // You can rotate based on the position of the term, either from the center or relative to some point
-                const rotation_angle = Math.atan2(pos.y - (document.documentElement.scrollHeight / 2), pos.x - (window.innerWidth / 2)) * (180 / Math.PI);
+                const distanceToCenter = Math.abs(pos.x - (window.innerWidth / 2));
+                const nle_rot = new NormalizedLinearEquation(0, (window.innerWidth / 2), 20, 45);
+
+                const side = pos.x > (window.innerWidth / 2) ? 1 : -1;
+
+                //const rotation_angle = Math.atan2(pos.y - (window.innerHeight / 2), pos.x - (window.innerWidth / 2)) * (180 / Math.PI);
+                const rotation_angle = (Math.random() * nle_rot.calc(distanceToCenter) + 10) * side;
 
                 const placement_term: termPlacement = {
                     term: term,
@@ -79,31 +85,44 @@ function TermAnimator() {
     }, [terms]);
 
     const findPosition = (currentUsedTerms: termPlacement[]) => {
-        let match = true;
         let x = 0;
         let y = 0;
+        let attempts = 0;
+        const maxAttempts = 50; // Limit the number of attempts to avoid infinite loop
 
         const maxHeight = document.documentElement.scrollHeight;
         const maxWidth = window.innerWidth;
 
-        while (match) {
+        const threshold = 20; // Smaller threshold for better spacing
+
+        // Keep trying until a valid position is found or we reach maxAttempts
+        while (attempts < maxAttempts) {
             x = Math.random() * maxWidth;
             y = Math.random() * maxHeight;
 
-            const threshold = 20;
-            match = false;
-
-            // Check if the position is too close to another term
+            let match = false;
+            // Check if the generated position is too close to another term
             for (const placement of currentUsedTerms) {
-                if ((placement.x >= x - threshold && placement.x <= x + threshold) &&
-                    (placement.y >= y - threshold && placement.y <= y + threshold)) {
+                if (
+                    Math.abs(placement.x - x) < threshold && // Check horizontal distance
+                    Math.abs(placement.y - y) < threshold    // Check vertical distance
+                ) {
                     match = true;
+                    break; // Break out if a match is found
                 }
             }
+
+            if (!match) {
+                return { x, y }; // Found a valid position
+            }
+
+            attempts++; // Increase the attempt counter
         }
 
+        // Fallback: Return the last position found if no valid position was found
         return { x, y };
     };
+
 
     return (
         <div className="absolute w-full h-full pointer-events-none overflow-x-clip">
