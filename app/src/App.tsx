@@ -10,6 +10,8 @@ import AdminPanelPage from "./components/AdminPanelPage";
 import {useEffect, useRef, useState} from "react";
 import {useUser} from "./components/UserContext";
 import Button from "./components/Button";
+import term_animator from "./components/term_animator";
+import TermAnimator from "./components/term_animator";
 
 function App() {
 
@@ -35,10 +37,6 @@ function App() {
 
             </div>
         )
-    }
-
-    function has_scrolled() : boolean {
-        return window.scrollY > 50;
     }
 
     function ProfilePicture() {
@@ -114,8 +112,6 @@ function App() {
 
         let showHeader = false;
 
-        if (has_scrolled() && location.pathname == "/") showHeader = true;
-
         if (location.pathname != "/") showHeader = true;
 
         return (
@@ -125,6 +121,9 @@ function App() {
 
     return (
         <div className="bg-gradient-to-b from-blue-100 to-white min-h-screen bg-background font-poppins">
+
+            {/* Term Animator */}
+            {TermAnimator()}
 
             {/* Header */}
             {showHeader()}
@@ -169,7 +168,7 @@ function App() {
             </div>
 
             {/* Footer */}
-            {has_scrolled() ? footer() : ""}
+            {location.pathname != "/" ? footer() : ""}
 
         </div>
     )
