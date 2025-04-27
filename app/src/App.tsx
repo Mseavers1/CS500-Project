@@ -10,13 +10,13 @@ import AdminPanelPage from "./components/AdminPanelPage";
 import {useEffect, useRef, useState} from "react";
 import {useUser} from "./components/UserContext";
 import Button from "./components/Button";
-import term_animator from "./components/term_animator";
-import TermAnimator from "./components/term_animator";
+import TermAnimator, {term} from "./components/term_animator";
 
 function App() {
 
     const location = useLocation();
     const nav = useNavigate();
+    const [terms, setTerms] = useState<term[]>([]);
 
     useEffect(() => {
         if (location.pathname === "/") {
@@ -29,6 +29,17 @@ function App() {
             document.body.style.overflowY = "auto";
         }
     }, [location.pathname]);
+
+    useEffect(() => {
+        fetch('/data/math_terms.txt')
+            .then((response) => response.text())
+            .then((data) => {
+                const termsArray = data.split('\n').filter(t => t.trim() !== '');
+                const loadedTerms = termsArray.map((term, index) => ({ id: index, name: term }));
+                setTerms(loadedTerms);
+            })
+            .catch((error) => console.error('Error fetching the file:', error));
+    }, []);
 
 
     const header = () => {
@@ -141,7 +152,7 @@ function App() {
             ></div>
 
             {/* Term Animator */}
-            <TermAnimator/>
+            <TermAnimator terms={terms}/>
 
             {/* Header */}
             {showHeader()}

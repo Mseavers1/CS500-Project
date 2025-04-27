@@ -4,14 +4,14 @@ import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import {useLocation} from "react-router-dom";
 
-function TermAnimator() {
+export type term = {
+    id: number;
+    name: string;
+}
+
+function TermAnimator({terms}: {terms: term[]}) {
 
     const location = useLocation();
-
-    type term = {
-        id: number;
-        name: string;
-    }
 
     type termPlacement = {
         term: term;
@@ -24,8 +24,9 @@ function TermAnimator() {
         text_color: string;
     }
 
-    const [terms, setTerms] = useState<term[]>([]);
     const [usedTerms, setUsedTerms] = useState<termPlacement[]>([]);
+    const [animationKeySuffix, setAnimationKeySuffix] = useState(0);
+
     const textColors = [
         //"#333", "#444", "#222", "#1a1a1a", "#555", "#000", "#e6e6e6",
         "#a2d1f7", "#f5e1a4", "#f4a5c2", "#9bcf8d", "#f0f0f0","#c3a2f7", "#AAA",
@@ -33,21 +34,11 @@ function TermAnimator() {
     ];
 
     useEffect(() => {
-        fetch('/data/math_terms.txt')
-            .then((response) => response.text())
-            .then((data) => {
-                const termsArray = data.split('\n').filter(t => t.trim() !== '');
-                const loadedTerms = termsArray.map((term, index) => ({ id: index, name: term }));
-                setTerms(loadedTerms);
-            })
-            .catch((error) => console.error('Error fetching the file:', error));
-    }, []);
-
-    useEffect(() => {
         if (terms.length === 0) return;
 
         const spawnTerms = () => {
-            const maxTerms = location.pathname == "/" ? 200 : 50;
+            const maxTerms = location.pathname === "/" ? 200 : 100;
+            const booster = location.pathname === "/" ? 1 : 1.5;
             const newTerms: termPlacement[] = [];
 
             for (let i = 0; i < maxTerms; i++) {
@@ -55,8 +46,8 @@ function TermAnimator() {
                 const pos = findPosition(newTerms);
 
                 const font_size = Math.random() * 10 + 15;
-                const nle_opacity = new NormalizedLinearEquation(15, 25, 0.2, 0.5);
-                const nle_blur = new NormalizedLinearEquation(15, 25, 1, 2);
+                const nle_opacity = new NormalizedLinearEquation(15, 25, 0.2 / booster, 0.5 / booster);
+                const nle_blur = new NormalizedLinearEquation(15, 25, 1 * booster, 2 * booster);
 
                 const distanceToCenter = Math.abs(pos.x - (window.innerWidth / 2));
                 const nle_rot = new NormalizedLinearEquation(0, (window.innerWidth / 2), 20, 45);
@@ -81,11 +72,21 @@ function TermAnimator() {
             }
 
             setUsedTerms(newTerms);
+            setAnimationKeySuffix(prev => prev + 1);
         };
 
+        // A small delay can sometimes help the visual transition
+        const spawnTimer = setTimeout(() => {
+            spawnTerms();
+        }, 50);
 
-        spawnTerms(); // Spawn terms when data is ready
-    }, [terms]);
+        // Cleanup
+        return () => {
+            clearTimeout(spawnTimer);
+            setUsedTerms([]);
+        };
+
+    }, [terms, location.pathname]);
 
     const findPosition = (currentUsedTerms: termPlacement[]) => {
         let x = 0;
@@ -146,8 +147,8 @@ function TermAnimator() {
         <div className="w-full h-full overflow-hidden pointer-events-none" style={{top: 0, left: 0, zIndex: -1}}>
             {usedTerms.map((placement, index) => (
                 <div
-                    key={placement.term.id}
-                    className="math-term"
+                    key={`${placement.term.id}-${animationKeySuffix}`}
+                    className="math-term animate-fade-in"
                     ref={(el) => adjustPosition(el)}
                     style={{
                         zIndex: -1,
@@ -159,9 +160,11 @@ function TermAnimator() {
                         position: 'absolute',
                         filter: `blur(${placement.blur}px)`,
                         textShadow: '0 0 4px rgba(0, 0, 0, 0.2)',
-                        opacity: placement.opacity,
-                        transform: `rotate(${placement.rot}deg)`
-                    }}
+                        //opacity: placement.opacity,
+                        //transform: `rotate(${placement.rot}deg)`,
+                        'opacity': String(placement.opacity),
+                        '--rotate': `${placement.rot}deg`,
+                    } as React.CSSProperties}
                 >
                     <BlockMath>{placement.term.name}</BlockMath>
                 </div>

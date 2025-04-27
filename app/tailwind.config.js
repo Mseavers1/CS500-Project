@@ -4,14 +4,12 @@ export default {
   theme: {
     extend: {
       animation: {
-        'fade-in-out': 'fadeInOut 5s ease-in-out',
+        'fade-in': 'fadeIn 1s ease-in forwards',
       },
       keyframes: {
-        fadeInOut: {
+        fadeIn: {
           '0%': { opacity: '0', transform: 'translate(-50%, -50%) scale(0.5) rotate(var(--rotate))' },
-          '10%': { opacity: 'var(--start-opacity)', transform: 'translate(-50%, -50%) scale(1) rotate(var(--rotate))' },
-          '90%': { opacity: 'var(--start-opacity)', transform: 'translate(-50%, -50%) scale(1) rotate(var(--rotate))' },
-          '100%': { opacity: '0', transform: 'translate(-50%, -50%) scale(0.5) rotate(var(--rotate))' },
+          '100%': { opacity: 'var(opacity)', transform: 'translate(-50%, -50%) scale(1) rotate(var(--rotate))' },
         },
       },
       fontFamily: {
