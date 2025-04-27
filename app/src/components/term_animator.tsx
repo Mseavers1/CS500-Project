@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import NormalizedLinearEquation from "../math/linear_equation";
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import {useLocation} from "react-router-dom";
 
 function TermAnimator() {
+
+    const location = useLocation();
 
     type term = {
         id: number;
@@ -44,7 +47,7 @@ function TermAnimator() {
         if (terms.length === 0) return;
 
         const spawnTerms = () => {
-            const maxTerms = 200; // Number of terms to spawn
+            const maxTerms = location.pathname == "/" ? 200 : 50;
             const newTerms: termPlacement[] = [];
 
             for (let i = 0; i < maxTerms; i++) {
@@ -88,49 +91,66 @@ function TermAnimator() {
         let x = 0;
         let y = 0;
         let attempts = 0;
-        const maxAttempts = 50; // Limit the number of attempts to avoid infinite loop
+        const maxAttempts = 50;
 
-        const maxHeight = document.documentElement.scrollHeight;
+        const maxHeight = location.pathname === "/" ? document.documentElement.scrollHeight : window.innerHeight;
         const maxWidth = window.innerWidth;
 
-        const threshold = 20; // Smaller threshold for better spacing
+        const threshold = 20;
 
-        // Keep trying until a valid position is found or we reach maxAttempts
         while (attempts < maxAttempts) {
             x = Math.random() * maxWidth;
             y = Math.random() * maxHeight;
 
             let match = false;
-            // Check if the generated position is too close to another term
             for (const placement of currentUsedTerms) {
                 if (
-                    Math.abs(placement.x - x) < threshold && // Check horizontal distance
-                    Math.abs(placement.y - y) < threshold    // Check vertical distance
+                    Math.abs(placement.x - x) < threshold &&
+                    Math.abs(placement.y - y) < threshold
                 ) {
                     match = true;
-                    break; // Break out if a match is found
+                    break;
                 }
             }
 
             if (!match) {
-                return { x, y }; // Found a valid position
+                return { x, y };
             }
 
-            attempts++; // Increase the attempt counter
+            attempts++;
         }
 
-        // Fallback: Return the last position found if no valid position was found
         return { x, y };
     };
 
 
+    const adjustPosition = (el: HTMLDivElement | null) => {
+        if (!el) return;
+
+        const rect = el.getBoundingClientRect();
+        const screenWidth = window.innerWidth;
+
+        if (rect.right > screenWidth) {
+            // Push it back to fit inside
+            const overflowAmount = rect.right - screenWidth;
+            el.style.left = `${el.offsetLeft - overflowAmount}px`; // 10px margin
+        }
+        if (rect.left < 0) {
+            // If somehow went off the left side too
+            el.style.left = `10px`;
+        }
+    };
+
+
     return (
-        <div className="absolute w-full h-full pointer-events-none overflow-x-clip">
-            {usedTerms.map((placement) => (
+        <div className="w-full h-full overflow-hidden pointer-events-none" style={{top: 0, left: 0, zIndex: -1}}>
+            {usedTerms.map((placement, index) => (
                 <div
                     key={placement.term.id}
                     className="math-term"
+                    ref={(el) => adjustPosition(el)}
                     style={{
+                        zIndex: -1,
                         top: `${placement.y}px`,
                         left: `${placement.x}px`,
                         fontSize: `${placement.font_size}`,
@@ -141,11 +161,12 @@ function TermAnimator() {
                         textShadow: '0 0 4px rgba(0, 0, 0, 0.2)',
                         opacity: placement.opacity,
                         transform: `rotate(${placement.rot}deg)`
-                    } as React.CSSProperties}
+                    }}
                 >
-                    {<BlockMath>{placement.term.name}</BlockMath>}
+                    <BlockMath>{placement.term.name}</BlockMath>
                 </div>
             ))}
+
         </div>
     );
 }

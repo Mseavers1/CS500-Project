@@ -15,13 +15,14 @@ export default function Button({ name, onClick, backgroundColor = "blue-500", co
 
     return (
         <button
-            className={`bg-${backgroundColor} w-[${width}px] text-white rounded-lg hover:bg-${hoverColor} focus:outline-none transform transition-all duration-200 ease-in-out active:scale-90`}
+            className={`bg-${backgroundColor} w-[${width}px] z-40 text-white rounded-lg hover:bg-${hoverColor} focus:outline-none transform transition-all duration-200 ease-in-out active:scale-90`}
             style={{
                 paddingLeft: `${px}px`,
                 paddingRight: `${px}px`,
                 paddingTop: `${py}px`,
                 paddingBottom: `${py}px`,
-                outline: 'none'
+                outline: 'none',
+                zIndex: 10,
             }}
             onClick={onClick}>
             {name}

@@ -18,9 +18,22 @@ function App() {
     const location = useLocation();
     const nav = useNavigate();
 
+    useEffect(() => {
+        if (location.pathname === "/") {
+            document.body.style.overflowY = "auto";
+        } else {
+            document.body.style.overflowY = "hidden";
+        }
+
+        return () => {
+            document.body.style.overflowY = "auto";
+        }
+    }, [location.pathname]);
+
+
     const header = () => {
         return (
-            <div className="fixed flex flex-row items-center top-0 justify-between right-0 p-3 w-full text-white bg-primary_bars">
+            <div className="fixed flex flex-row items-center top-0 justify-between right-0 p-3 z-20 w-full text-white bg-primary_bars">
                 <p className="font-nunito text-2xl select-none"> M.A.P - A Math Advancement Platform </p>
                 <div className="flex flex-row items-center justify-center gap-5">
                     <Button name="Dashboard" backgroundColor="transparent" onClick={() => {nav("/dashboard");}}/>
@@ -120,23 +133,28 @@ function App() {
     }
 
     return (
-        <div className="bg-gradient-to-b from-blue-100 to-white min-h-screen bg-background font-poppins">
+        <div className="min-h-screen font-poppins">
+
+            <div
+                className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-blue-100 to-white"
+                style={{zIndex: -2}}
+            ></div>
 
             {/* Term Animator */}
-            {TermAnimator()}
+            <TermAnimator/>
 
             {/* Header */}
             {showHeader()}
 
             {/* Body */}
-            <div className="p-5">
+            <div className="p-5" style={{zIndex: 10}}>
                 <Routes>
-                    <Route path="/" element={<HomePage />} />
+                    <Route path="/" element={<HomePage/>}/>
                     <Route
                         path="/dashboard"
                         element={
                             <ProtectedRoute>
-                                <ProfilePage />
+                                <ProfilePage/>
                             </ProtectedRoute>
                         }
                     />
@@ -144,7 +162,7 @@ function App() {
                         path="/selector"
                         element={
                             <ProtectedRoute>
-                                <TopicSelector />
+                                <TopicSelector/>
                             </ProtectedRoute>
                         }
                     />
@@ -152,7 +170,7 @@ function App() {
                         path="/solve"
                         element={
                             <ProtectedRoute>
-                                <QuestionSolver />
+                                <QuestionSolver/>
                             </ProtectedRoute>
                         }
                     />
@@ -160,7 +178,7 @@ function App() {
                         path="/admin"
                         element={
                             <ProtectedRoute auth="admin">
-                                <AdminPanelPage />
+                                <AdminPanelPage/>
                             </ProtectedRoute>
                         }
                     />

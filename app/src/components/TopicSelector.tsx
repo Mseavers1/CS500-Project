@@ -177,7 +177,7 @@ function TopicSelector () {
 
 
     return (
-        <div className="">
+        <div className="flex justify-center items-center my-20">
 
             {topicSelector()}
 

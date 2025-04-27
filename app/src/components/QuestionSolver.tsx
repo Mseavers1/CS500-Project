@@ -102,13 +102,7 @@ function QuestionSolver () {
     }
 
     return (
-        <div className="flex flex-col text-center items-center gap-5">
-
-            <div className="absolute top-2 right-2">
-                <Button name={"Back"} onClick={() => {
-                    nav("/selector")
-                }}/>
-            </div>
+        <div className="flex flex-col text-center items-center gap-5 my-10">
 
             <p className="text-[40px]"> Current Difficulty: {dif} </p>
             <p className="text-[20px]"> Solution: {solution} </p>
