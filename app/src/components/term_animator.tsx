@@ -144,7 +144,7 @@ function TermAnimator({terms}: {terms: term[]}) {
 
 
     return (
-        <div className="w-full h-full overflow-hidden pointer-events-none" style={{top: 0, left: 0, zIndex: -1}}>
+        <div className="w-full h-full overflow-hidden pointer-events-none select-none" style={{top: 0, left: 0, zIndex: -1}}>
             {usedTerms.map((placement, index) => (
                 <div
                     key={`${placement.term.id}-${animationKeySuffix}`}

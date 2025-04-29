@@ -17,6 +17,7 @@ function App() {
     const location = useLocation();
     const nav = useNavigate();
     const [terms, setTerms] = useState<term[]>([]);
+    const {username, setUsername, authorization} = useUser();
 
     useEffect(() => {
         if (location.pathname === "/") {
@@ -48,6 +49,7 @@ function App() {
                 <p className="font-nunito text-2xl select-none"> M.A.P - A Math Advancement Platform </p>
                 <div className="flex flex-row items-center justify-center gap-5">
                     <Button name="Dashboard" backgroundColor="transparent" onClick={() => {nav("/dashboard");}}/>
+                    {authorization === "admin" ? <Button name="Admin" width={65} backgroundColor="transparent" onClick={() => {nav("/admin");}}/> : ""}
                     <Button name="Selector" backgroundColor="transparent" onClick={() => {nav("/selector");}}/>
                     <ProfilePicture/>
                 </div>
@@ -66,8 +68,6 @@ function App() {
     function ProfilePicture() {
         const [showProfilePanel, setShowProfilePanel] = useState(false);
         const containerRef = useRef<HTMLDivElement>(null);
-        const {username, setUsername, authorization} = useUser();
-
 
         const togglePanel = () => {
             setShowProfilePanel(prev => !prev);
