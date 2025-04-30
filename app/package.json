@@ -2,7 +2,7 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "./",
+  "homepage": "https://mseavers1.github.io/CS500-Project/",
   "dependencies": {
     "@fontsource/nunito": "^5.1.1",
     "@fontsource/poppins": "^5.1.1",
