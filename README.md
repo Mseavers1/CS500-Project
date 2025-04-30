@@ -42,9 +42,9 @@ The following steps will help you install our system on your machine and run the
           - E: T 1 1 0
           - E: \\frac{T}{E} 1 1 15
           - E: (T)*E 1 1 5
-          - T: c 1 2 0
-          - T: x 1 2 1
-          - T: (c*x) 1 1 2
+          - T: ${id[1, 20]} 1 2 0
+          - T: ${var} 1 2 1
+          - T: (\${var} * \${id[1, 20]}) 1 1 2
      - Once added, you should be able to go to the selector panel and find the topic that you created.
 
 ## Credits
