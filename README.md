@@ -14,5 +14,8 @@ The following are the steps to install our system onto your machine and to run t
 1. Download the repository and code.
 2. Install the database
      - We created our database onto our own machine rather than using a cloud solution.
-     - 
-4. 
+     - Download PostgresSQL: https://www.postgresql.org/download/windows/
+     - Follow the laucher by creating and setting up your database. Note: there is no special configeration we used but remember the                password you create as you will need it to log into the database.
+     - Once installed, in cmd type: psql -U postgres. If installation was successful, you should see 'postgres=#'.
+3. Install all python, tpyescript, and react dependencies. If you are using a IDE, this should be easy as it will do this for you or make it    easier to install them.
+     - We attempted to make this easier in the requirements.txt file for the python dependencies. By doing 'pip install -r requirements.txt'      you will download all required dependencies. There might be some missing or extra needed for your system.
