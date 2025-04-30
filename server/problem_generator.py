@@ -63,48 +63,68 @@ class QuestionGenerator:
         if len(logs) <= 0:
             return self.cfg.generate(2), 2
 
-        # Step 3: Calculate the average of time of all logs
-        avg_time = 0
-
-        for log in logs:
-            avg_time += log.time_taken
-
-        avg_time /= len(logs)
-
-        # Step 4: Get the latest entry & latest difficulty
+        # Step 3: Get the latest entry & latest difficulty
         latest_log = logs[-1]
         latest_difficulty = latest_log.difficulty
 
-        # Step 5: Calculate score of last entry
-        time_penalty = math.log((latest_log.time_taken / avg_time) + 1) if avg_time > 0 else 0
+        # Step 4: Get all logs that have the same difficulty
+        logs_same_difficulty = [log for log in logs if log['difficulty'] == latest_difficulty]
 
-        score = (self.wc * latest_log.is_correct * latest_log.difficulty) - \
-            (self.wa * latest_log.attempts) - (self.ws * latest_log.skipped) - (self.wt * time_penalty)
+        # Step 4.5: If there are not 5 entries, keep difficulty
+        if len(logs_same_difficulty) < 5:
+            return self.cfg.generate(latest_difficulty), latest_difficulty
 
-        # Step 6: Calculate smooth score from all logs
-        smoothed_score = 0
-        for idx, log in enumerate(reversed(logs)):
-            time_penalty = math.log((log.time_taken / avg_time) + 1) if avg_time > 0 else 0
+        # Step 5: Calculate the average time excluding the latest entry
+        average_time = 0
+        for log in logs_same_difficulty[:-1]:
+            average_time += log["time_taken"]
+        average_time /= (len(logs_same_difficulty) - 1)
 
-            s = (self.wc * log.is_correct * log.difficulty) - (self.wa * log.attempts) - \
-                (self.ws * log.skipped) - (self.wt * time_penalty)
+        def calculate_time_factor(time_difference, scaling_factor=0.02, min_factor=0.5, max_factor=2.0):
+            """Calculates a time factor based on the time difference from the average. (generated in Gemini)"""
+            adjustment = time_difference * scaling_factor
+            time_factor = 1 - adjustment
+            # Clamp the time factor to a reasonable range
+            return max(min_factor, min(max_factor, time_factor))
 
-            # Decaying weight
-            weight = self.alpha ** idx
-            smoothed_score += weight * s
+        def calc_cost(log, avg_time):
 
-        # Step 7: Normalize the smooth score
-        total_weight = sum(self.alpha ** i for i in range(len(logs)))
-        smoothed_score /= total_weight
+            points = 0
 
-        # Step 8: Calculate new difficulty
+            # Time costs
+            time = log["time_taken"] - avg_time
+            factor = calculate_time_factor(time)
+
+            # Positive cost
+            if log["is_correct"]:
+                points += (10 * factor)
+
+            # Attempt cost
+            points -= (1.5 * log["attempts"])
+
+            # Skip Costs
+            if not log["skipped"]:
+                points += 5
+
+            return points
+
+        # Step 6: Calculate the average score excluding the latest entry
+        avg_costs = 0
+        for log in logs_same_difficulty[:-1]:
+            avg_costs += calc_cost(log, average_time)
+        avg_costs /= (len(logs_same_difficulty) - 1)
+
+        # Step 7: Calculate the score of the latest entry
+        latest_cost = calc_cost(latest_log, average_time)
+
+        # Step 8: Set new difficulty
         new_dif = latest_difficulty
-        if score > smoothed_score + self.linear_range * (1 + latest_difficulty * self.scaling_factor):
-            new_dif += 1
-        elif score < smoothed_score - self.linear_range * (1 + latest_difficulty * self.scaling_factor):
-            new_dif -= 1
+        differ = latest_cost - avg_costs
 
-        print(f"\n\n\n{smoothed_score} - {score} - {self.linear_range * (1 + latest_difficulty * self.scaling_factor)}")
+        if differ < -1:
+            new_dif -= 1
+        elif differ > 1:
+            new_dif += 1
 
         new_dif = max(new_dif, 2)
         return self.cfg.generate(new_dif), new_dif

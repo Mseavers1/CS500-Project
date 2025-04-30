@@ -315,7 +315,7 @@ class ServerAPI:
 
             # If division
             def replace_fractions(problem: str) -> str:
-                # Match and replace \frac{...}{...} using a simple regex pattern
+                # Match and replace \frac{...}{...}
                 pattern = r'\\frac\{([^{}]+)\}\{([^{}]+)\}'
                 return re.sub(pattern, r'((\1)/(\2))', problem)
 
