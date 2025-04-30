@@ -6,6 +6,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {useUser} from "./UserContext";
 import MathInput from "./MathInput";
 import Timer from "./Timer";
+import Button from "./Button";
 
 type SolverInputProps = {
     answer: string;
@@ -28,6 +29,8 @@ const SolverInput: React.FC<SolverInputProps> = ({
                                                      generateProblem,
                                                      setResetTrigger
                                                  }) => {
+
+    const [isIncorrect, setIsIncorrect] = useState(false);
 
     function onSubmit() {
 
@@ -88,14 +91,12 @@ const SolverInput: React.FC<SolverInputProps> = ({
             // Check No Solution
             if (solution === "No Solution" && (a.toLowerCase() === "no solution" || a === "\\emptyset")) {
                 isCorrect = true;
-            } else if (matches && solution === "No Solution" && (matches[1].toLowerCase() === "no solution" || matches[1] === "\\emptyset")){
-                isCorrect = true;
             }
         }
 
         // If correct, reset and generate new problem
         if (isCorrect) {
-            playSound("/sounds/ding-101492.mp3")
+            playSound("/sounds/ding-101492.mp3");
             setAnswer("");
             recordLog(true, false);
             generateProblem();
@@ -103,21 +104,56 @@ const SolverInput: React.FC<SolverInputProps> = ({
         }
         // If user got the question wrong and exceeded the 3 attempts, get problem wrong
         else if (attempts >= 3) {
-            playSound("/sounds/wrong-answer-126515.mp3")
-            alert("Incorrect (3 attempts used). Correct answer was: " + solution);
+            playSound("/sounds/wrong-answer-126515.mp3");
+
+            // Say wrong answer and show the answer
+            setIsIncorrect(true);
 
             recordLog(false, false);
             generateProblem();
             setResetTrigger(prev => !prev);
         }
         else {
-            playSound("/sounds/wrong-answer-126515.mp3")
+            playSound("/sounds/wrong-answer-126515.mp3");
         }
+    }
+
+    function IncorrectDisplay() {
+        return (
+            <div
+                className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50"
+                style={{ zIndex: 30 }}
+            >
+                {/* Card Container */}
+                <div className="bg-white rounded-md shadow-lg p-6 relative">
+                    {/* Close Button (positioned relative to the card) */}
+                    <div className="absolute top-2 right-2">
+                        <Button
+                            name={"X"}
+                            onClick={async () => {
+                                setIsIncorrect(false);
+                            }}
+                            backgroundColor={"red-500"}
+                            width={24}
+                            px={8}
+                            py={2}
+                        />
+                    </div>
+
+                    {/* Content of the card */}
+                    <div className="flex flex-col items-center justify-center my-5">
+                        <p className="mb-2">Attempts exceeded (3/3) -- Question marked incorrect.</p>
+                        <p>The correct answer was: {solution}</p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
         <div className="flex flex-col gap-2 items-center justify-center">
-            <MathInput OnSubmit={onSubmit} setAnswer={setAnswer} answer={answer} />
+            {isIncorrect ? IncorrectDisplay() : ""}
+            <MathInput OnSubmit={onSubmit} setAnswer={setAnswer} answer={answer}/>
         </div>
     )
 }
@@ -132,17 +168,17 @@ function QuestionSolver () {
     const [startTime, setStartTime] = useState<number>(0);
 
     const location = useLocation();
-    const { q_type, topic} = location.state || {};
+    const {q_type, topic} = location.state || {};
     const nav = useNavigate();
-    const { username } = useUser();
+    const {username} = useUser();
     const [resetTrigger, setResetTrigger] = useState<boolean>(false);
 
     const generateProblem = async () => {
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/problem/generate/",
-                { username: username, q_type: q_type, topic: topic },
-                { headers: { "Content-Type": "application/json" } }
+                {username: username, q_type: q_type, topic: topic},
+                {headers: {"Content-Type": "application/json"}}
             );
 
             setProblem(response.data.problem);
@@ -182,12 +218,9 @@ function QuestionSolver () {
 
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/problem/log/",
-                payload,
-                {headers: {"Content-Type": "application/json"}}
-            );
+                payload, {headers: {"Content-Type": "application/json"}});
 
-
-            if (!response.data) alert("Failed to log message")
+            if (!response.data) alert("Failed to log message");
 
             setAttempts(0);
 
@@ -199,8 +232,7 @@ function QuestionSolver () {
                 console.error("Unexpected Error:", error);
                 alert("An unexpected error occurred.");
             }
-        }
-    }
+        }}
 
     useEffect(() => {
         generateProblem();
@@ -216,6 +248,11 @@ function QuestionSolver () {
             <BlockMath math={problem} />
         );
     }
+
+    const playSound = (src: string) => {
+        const audio = new Audio(src);
+        audio.play();
+    };
 
     return (
         <div className="flex flex-col justify-center items-center min-h-screen text-center gap-20">
@@ -253,6 +290,7 @@ function QuestionSolver () {
                             recordLog(false, true);
                             generateProblem();
                             setResetTrigger(prev => !prev);
+                            playSound("/sounds/wrong-answer-126515.mp3");
                         }}>
                         Skip
                     </button>
