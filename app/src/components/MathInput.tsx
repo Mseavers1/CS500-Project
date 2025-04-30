@@ -4,15 +4,24 @@ import { BlockMath } from "react-katex";
 import InputField from "./InputField";
 import Button from "./Button";
 
-const MathInput = ({ OnSubmit, setAnswer }: {
+const MathInput = ({ OnSubmit, setAnswer, answer }: {
     OnSubmit: () => void;
     setAnswer: Dispatch<SetStateAction<string>>;
+    answer: string;
 }) => {
     const [input, setInput] = useState<string>("");
 
     useEffect(() => {
         setAnswer(input);
     }, [input, setAnswer]);
+
+    useEffect(() => {
+
+        if (answer === "") {
+            setInput("");
+        }
+
+    }, [answer]);
 
     const mathButtons = [
         { symbol: "\\int", addText: "\\int", size: 0.8 },

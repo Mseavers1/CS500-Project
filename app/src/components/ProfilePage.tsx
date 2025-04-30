@@ -9,13 +9,12 @@ export default function ProfilePage() {
     const nav = useNavigate();
 
     return (
-        <div className="flex flex-col justify-center items-center gap-5">
+        <div className="min-h-screen flex flex-col justify-center items-center gap-5">
             <p className="text-2xl"> Hello {authorization} {username}! </p>
 
             <div className="flex flex-row gap-5">
                 <Button name="Selector" onClick={() => {nav("/selector"); }} colorDif={100}/>
-                {authorization === "admin" ? <Button name="Admin Pannel" width={130} onClick={() => {nav("/admin")}} /> : ""}
-                <LogoutButton />
+                {authorization === "admin" ? <Button name="Admin Pannel" width={130} colorDif={100} onClick={() => {nav("/admin")}} /> : ""}
             </div>
         </div>
     )

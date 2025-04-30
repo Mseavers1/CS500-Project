@@ -32,7 +32,7 @@ function App() {
     }, [location.pathname]);
 
     useEffect(() => {
-        fetch('./data/math_terms.txt')
+        fetch('/data/math_terms.txt')
             .then((response) => response.text())
             .then((data) => {
                 const termsArray = data.split('\n').filter(t => t.trim() !== '');
@@ -122,8 +122,7 @@ function App() {
                             <span className="text-red-400 font-semibold">{username}</span>
                             <span className="-ml-1">!</span>
                         </div>
-
-                        <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
+                        
                         <button className="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-100"
                                 onClick={() => {onLogout()}}>Logout</button>
                     </div>

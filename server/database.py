@@ -104,6 +104,7 @@ class Database:
                         TopicTable.topic_name == topic_name,
                         QuestionTypeTable.type_name == question_type_name
                     )
+                    .order_by(TransactionLogTable.timestamp)
                 )
 
                 matches = result.scalars().all()

@@ -68,7 +68,7 @@ class QuestionGenerator:
         latest_difficulty = latest_log.difficulty
 
         # Step 4: Get all logs that have the same difficulty
-        logs_same_difficulty = [log for log in logs if log['difficulty'] == latest_difficulty]
+        logs_same_difficulty = [log for log in logs if log.difficulty == latest_difficulty]
 
         # Step 4.5: If there are not 5 entries, keep difficulty
         if len(logs_same_difficulty) < 5:
@@ -77,7 +77,7 @@ class QuestionGenerator:
         # Step 5: Calculate the average time excluding the latest entry
         average_time = 0
         for log in logs_same_difficulty[:-1]:
-            average_time += log["time_taken"]
+            average_time += log.time_taken
         average_time /= (len(logs_same_difficulty) - 1)
 
         def calculate_time_factor(time_difference, scaling_factor=0.02, min_factor=0.5, max_factor=2.0):
@@ -92,19 +92,21 @@ class QuestionGenerator:
             points = 0
 
             # Time costs
-            time = log["time_taken"] - avg_time
+            time = log.time_taken - avg_time
             factor = calculate_time_factor(time)
 
             # Positive cost
-            if log["is_correct"]:
+            if log.is_correct:
                 points += (10 * factor)
 
             # Attempt cost
-            points -= (1.5 * log["attempts"])
+            points -= (1.5 * log.attempts)
 
             # Skip Costs
-            if not log["skipped"]:
+            if not log.skipped:
                 points += 5
+            else:
+                points -= 2
 
             return points
 
@@ -121,10 +123,12 @@ class QuestionGenerator:
         new_dif = latest_difficulty
         differ = latest_cost - avg_costs
 
-        if differ < -1:
+        if differ < -0.01:
             new_dif -= 1
-        elif differ > 1:
+        elif differ > 0.01:
             new_dif += 1
+
+        print(f"\n\n{latest_cost}   {avg_costs}    {new_dif}\n\n\n")
 
         new_dif = max(new_dif, 2)
         return self.cfg.generate(new_dif), new_dif

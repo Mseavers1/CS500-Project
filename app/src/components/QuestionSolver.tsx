@@ -5,6 +5,7 @@ import axios from "axios";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useUser} from "./UserContext";
 import MathInput from "./MathInput";
+import Timer from "./Timer";
 
 type SolverInputProps = {
     answer: string;
@@ -14,6 +15,7 @@ type SolverInputProps = {
     setAttempts: (value: number) => void;
     recordLog: (is_correct: boolean, skipped: boolean) => void;
     generateProblem: () => void;
+    setResetTrigger: Dispatch<SetStateAction<boolean>>;
 };
 
 const SolverInput: React.FC<SolverInputProps> = ({
@@ -23,7 +25,8 @@ const SolverInput: React.FC<SolverInputProps> = ({
                                                      attempts,
                                                      setAttempts,
                                                      recordLog,
-                                                     generateProblem
+                                                     generateProblem,
+                                                     setResetTrigger
                                                  }) => {
 
     function onSubmit() {
@@ -91,19 +94,21 @@ const SolverInput: React.FC<SolverInputProps> = ({
             setAnswer("");
             recordLog(true, false);
             generateProblem();
+            setResetTrigger(prev => !prev);
         }
         // If user got the question wrong and exceeded the 3 attempts, get problem wrong
-        else if (attempts >= 3) {
+        else if (attempts >= 2) {
             alert("Incorrect (3 attempts used). Correct answer was: " + solution);
 
             recordLog(false, false);
             generateProblem();
+            setResetTrigger(prev => !prev);
         }
     }
 
     return (
         <div className="flex flex-col gap-2 items-center justify-center">
-            <MathInput OnSubmit={onSubmit} setAnswer={setAnswer} />
+            <MathInput OnSubmit={onSubmit} setAnswer={setAnswer} answer={answer} />
         </div>
     )
 }
@@ -121,6 +126,7 @@ function QuestionSolver () {
     const { q_type, topic} = location.state || {};
     const nav = useNavigate();
     const { username } = useUser();
+    const [resetTrigger, setResetTrigger] = useState<boolean>(false);
 
     const generateProblem = async () => {
         try {
@@ -205,6 +211,7 @@ function QuestionSolver () {
     return (
         <div className="flex flex-col justify-center items-center min-h-screen text-center gap-20">
 
+            <Timer resetTrigger={resetTrigger} />
 
             {/*<p className="text-[40px]"> Current Difficulty: {dif} </p>
             <p className="text-[20px]"> Solution: {solution} </p>*/}
@@ -219,23 +226,25 @@ function QuestionSolver () {
                     setAttempts={setAttempts}
                     recordLog={recordLog}
                     generateProblem={generateProblem}
+                    setResetTrigger={setResetTrigger}
                 />
 
                 <div className="flex flex-row justify-center gap-20">
 
-                    <button
+                    {/*<button
                         className="bg-blue-300 text-white px-4 py-2 rounded-lg hover:bg-blue-400 active:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         onClick={() => {
 
                         }}>
                         Help
-                    </button>
+                    </button>*/}
 
                     <button
                         className="bg-blue-300 text-white px-4 py-2 rounded-lg hover:bg-blue-400 active:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         onClick={() => {
                             recordLog(false, true);
                             generateProblem();
+                            setResetTrigger(prev => !prev);
                         }}>
                         Skip
                     </button>
