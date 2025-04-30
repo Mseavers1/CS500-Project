@@ -42,7 +42,7 @@ def generate_code(length: int = 5) -> str:
     return ''.join(secrets.choice(characters) for _ in range(length))
 
 
-# How to run server, use this in console: x
+# How to run server, use this in console: uvicorn server:app --reload;
 class ServerAPI:
 
     def __init__(self):
