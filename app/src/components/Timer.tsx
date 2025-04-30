@@ -22,7 +22,7 @@ const Timer: React.FC<TimerProps> = ({ resetTrigger }) => {
 
     return (
         <div className="text-xl font-mono">
-            Time: {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
+            {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
         </div>
     );
 };

@@ -46,3 +46,7 @@ The following steps will help you install our system on your machine and run the
           - T: x 1 2 1
           - T: (c*x) 1 1 2
      - Once added, you should be able to go to the selector panel and find the topic that you created.
+
+## Credits
+Ding Sound Effect: Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101492">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101492">Pixabay</a>
+Incorrect Sound Effect: Sound Effect by <a href="https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=126515">Universfield</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=126515">Pixabay</a>

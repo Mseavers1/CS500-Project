@@ -43,6 +43,11 @@ const SolverInput: React.FC<SolverInputProps> = ({
             return null;
         }
 
+        const playSound = (src: string) => {
+            const audio = new Audio(src);
+            audio.play();
+        };
+
         let a = answer;
 
         // Separate answers from variable if applicable
@@ -53,7 +58,7 @@ const SolverInput: React.FC<SolverInputProps> = ({
         const match = solution?.match(/^\[(.*?)\]$/);
         let isCorrect = false;
 
-        alert(solution + " " + a)
+        //alert(solution + " " + a)
 
         // Converts solution out of [] && Finds out if answer is correct
         if (match) {
@@ -90,19 +95,23 @@ const SolverInput: React.FC<SolverInputProps> = ({
 
         // If correct, reset and generate new problem
         if (isCorrect) {
-            alert("Correct!")
+            playSound("/sounds/ding-101492.mp3")
             setAnswer("");
             recordLog(true, false);
             generateProblem();
             setResetTrigger(prev => !prev);
         }
         // If user got the question wrong and exceeded the 3 attempts, get problem wrong
-        else if (attempts >= 2) {
+        else if (attempts >= 3) {
+            playSound("/sounds/wrong-answer-126515.mp3")
             alert("Incorrect (3 attempts used). Correct answer was: " + solution);
 
             recordLog(false, false);
             generateProblem();
             setResetTrigger(prev => !prev);
+        }
+        else {
+            playSound("/sounds/wrong-answer-126515.mp3")
         }
     }
 
@@ -211,11 +220,10 @@ function QuestionSolver () {
     return (
         <div className="flex flex-col justify-center items-center min-h-screen text-center gap-20">
 
-            <Timer resetTrigger={resetTrigger} />
-
             {/*<p className="text-[40px]"> Current Difficulty: {dif} </p>
             <p className="text-[20px]"> Solution: {solution} </p>*/}
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-2">
+                <Timer resetTrigger={resetTrigger} />
                 <p className="text-4xl font-bold text-black">Solve for X:</p>
                 <p className="text-2xl text-black"> {displayProblem(problem)} </p>
                 <SolverInput
