@@ -19,3 +19,4 @@ The following are the steps to install our system onto your machine and to run t
      - Once installed, in cmd type: psql -U postgres. If installation was successful, you should see 'postgres=#'.
 3. Install all python, tpyescript, and react dependencies. If you are using a IDE, this should be easy as it will do this for you or make it    easier to install them.
      - We attempted to make this easier in the requirements.txt file for the python dependencies. By doing 'pip install -r requirements.txt'      you will download all required dependencies. There might be some missing or extra needed for your system.
+     - All the dependencies for typscript are also in a requirements.txt file (The one for python is in the SERVER folder)
