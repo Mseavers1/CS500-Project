@@ -27,54 +27,73 @@ const SolverInput: React.FC<SolverInputProps> = ({
                                                  }) => {
 
     function onSubmit() {
+
+        function parseFraction(fractionString : string) {
+            const parts = fractionString.split('/');
+            if (parts.length === 2) {
+                const numerator = parseFloat(parts[0]);
+                const denominator = parseFloat(parts[1]);
+                if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                    return numerator / denominator;
+                }
+            }
+            return null;
+        }
+
         let a = answer;
 
-        // Get answer if it has x=
-        if (answer.includes("=")) {
-            let div = answer.split("=");
-            a = div[1];
-        }
+        // Separate answers from variable if applicable
+        const matches = a.match(/-?\d+(\.\d+)?/g);
 
-        // Check if answer matches solution
         setAttempts(attempts + 1);
 
-        const match = solution?.match(/^\[(.+)\]$/);
-        let value = match ? match[1] : null;
+        const match = solution?.match(/^\[(.*?)\]$/);
+        let isCorrect = false;
 
-        // Check if answer is a fraction, if so, allow answer to be in decimal
-        let value_decimal = null
-        if (value?.includes("/")) {
-            const [numerator, denominator] = value.split("/").map(Number);
-            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-                value_decimal = numerator / denominator;
+        alert(solution + " " + a)
+
+        // Converts solution out of [] && Finds out if answer is correct
+        if (match) {
+            const value = match[1];
+
+            // Check if matching exactly
+            if (a.toLowerCase() === value.toLowerCase()) {
+                isCorrect = true;
             }
-        } else if (value !== null && !isNaN(Number(value))) {
-            value_decimal = parseFloat(value);
-        }
+            // Check if matching numerically
+            else {
+                const parsedSolution = parseFraction(value);
+                const parsedAnswer = parseFraction(a);
 
-        if (solution == "No Solution") {
-            value = solution
-        }
+                if (parsedSolution !== null && parsedAnswer !== null && parsedSolution === parsedAnswer) {
+                    isCorrect = true;
+                }
 
-        //alert(number?.toString() + " " + a)
-        let a_decimal = null;
-        if (a?.includes("/")) {
-            const [numerator, denominator] = a.split("/").map(Number);
-            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-                a_decimal = numerator / denominator;
+                else if (!value.includes('/') && !a.includes('/') && parseFloat(value) === parseFloat(a)) {
+                    isCorrect = true;
+                }
             }
-        } else if (value !== null && !isNaN(Number(value))) {
-            a_decimal = parseFloat(value);
+
+        }
+        else {
+
+            // Check No Solution
+            if (solution === "No Solution" && (a.toLowerCase() === "no solution" || a === "\\emptyset")) {
+                isCorrect = true;
+            } else if (matches && solution === "No Solution" && (matches[1].toLowerCase() === "no solution" || matches[1] === "\\emptyset")){
+                isCorrect = true;
+            }
         }
 
-
-        if (a == value?.toString() || (value_decimal != null && a == value_decimal.toString()) || (a_decimal != null && a_decimal == value_decimal)) {
+        // If correct, reset and generate new problem
+        if (isCorrect) {
             alert("Correct!")
             setAnswer("");
-
             recordLog(true, false);
             generateProblem();
-        } else if (attempts >= 3) {
+        }
+        // If user got the question wrong and exceeded the 3 attempts, get problem wrong
+        else if (attempts >= 3) {
             alert("Incorrect (3 attempts used). Correct answer was: " + solution);
 
             recordLog(false, false);
