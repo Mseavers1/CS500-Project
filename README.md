@@ -8,5 +8,11 @@ question generator that allows students to solve problem sets and scales to the 
 ## Notice
 Some lines of code have been generated using generative AI, mainly Oracle's ChatGPT (GPT 4 Turbo). Any lines that have been generated have been commented as such.
 
-## Progress
-Currently, I am working on developing the AI side of the project, scaling questions with the student's performance.
+## How to Install
+The following are the steps to install our system onto your machine and to run the code. 
+
+1. Download the repository and code.
+2. Install the database
+     - We created our database onto our own machine rather than using a cloud solution.
+     - 
+4. 
