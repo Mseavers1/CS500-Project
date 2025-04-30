@@ -243,7 +243,7 @@ class Database:
 
                 rules = [match.rule.to_dict() for match in matches]
 
-                print(f"matches: {rules}, topic_name: {topic_name}, type_name: {type_name}")
+                print(f"\n\n\n\n\n\nmatches: {rules}, topic_name: {topic_name}, type_name: {type_name}\n\n\n\n\n")
 
             return {"successful": True, "matches": rules}
 

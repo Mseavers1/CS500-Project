@@ -18,8 +18,9 @@ class CFG:
 
     def add_rule(self, variable, ruleset, cost, weight, priority):
 
-        """Creates or adds the new rule associated to a variable"""
+        print(f"Variable: {variable}\n\n\n")
 
+        """Creates or adds the new rule associated to a variable"""
         # Add rule if rule doesn't already exist
         if variable not in self.rules:
             self.rules[variable] = ([ruleset], [cost], [weight], [priority])
@@ -134,7 +135,7 @@ class CFG:
                 # Replace the old variable with the expanded expression in the final expression
                 expression = replace_variable(expression, priority_location, expanded)
 
-            if only_terminals or step > 20:
+            if only_terminals:
                 break
 
             # Flip starting side only if priority is a 1
@@ -147,27 +148,80 @@ class CFG:
             print(f"Step {step}: {expression}   -- Total cost: {total_cost}")
             step += 1
 
-        # Replace terminals with values if applicable -- Made with GPT -> Remake?
-        def replace_c(expression):
-            # Regular expression to match LaTeX math commands like \frac{c}{c} or other math syntax
-            latex_pattern = r'\\frac'
+        # Replace terminals with values if applicable -- Made with Gemini
+        def replace_id(expression):
+            """
+            Replaces instances of '$id[min,max]' with a random integer within the specified range,
+            while ignoring 'id' within LaTeX math commands.
+            """
 
-            # Find all LaTeX expressions and exclude them from replacement
-            latex_matches = re.findall(latex_pattern, expression)
+            def replace_match(match):
+                min_val = int(match.group(1))
+                max_val = int(match.group(2))
+                return str(random.randint(min_val, max_val))
 
-            # Temporarily replace LaTeX expressions with placeholders
-            for idx, match in enumerate(latex_matches):
-                expression = expression.replace(match, f'DIV{idx}__')
+            # Regular expression to find '$id[min,max]' patterns
+            pattern = r'\$id\[(\d+),(\d+)\]'
 
-            # Replace all 'c' with a random number, but now it's safe outside LaTeX expressions
-            expression = re.sub(r'c', lambda _: str(random.randint(1, 20)), expression)
+            # Regular expression to match LaTeX math environments
+            latex_pattern = r'\$(.*?)\$'
 
-            # Restore the LaTeX expressions from placeholders
-            for idx, match in enumerate(latex_matches):
-                expression = expression.replace(f'DIV{idx}__', match)
+            # Find all LaTeX math environments
+            latex_matches = list(re.finditer(latex_pattern, expression))
+
+            # Keep track of indices within LaTeX environments
+            latex_indices = set()
+            for match in latex_matches:
+                for i in range(match.start(), match.end()):
+                    latex_indices.add(i)
+
+            def replace_outside_latex(match):
+                start, end = match.span()
+                # Check if any index of the matched '$id[min,max]' is within a LaTeX environment
+                for i in range(start, end):
+                    if i in latex_indices:
+                        return match.group(0)  # Return the original if inside LaTeX
+                return replace_match(match)  # Perform replacement if outside LaTeX
+
+            # Replace '$id[min,max]' only outside LaTeX environments
+            expression = re.sub(pattern, replace_outside_latex, expression)
 
             return expression
 
-        expression = replace_c(expression)
+        # Generation help from Gemini - Addititions and edits by michael
+        def find_and_process_commands(expression):
+            """
+            Finds all commands enclosed in '${}' and processes specific commands.
+            """
+
+            def replace_id_range(match):
+                """Replacement function for '${id[min,max]}'."""
+                min_val = int(match.group(1))
+                max_val = int(match.group(2))
+                return str(random.randint(min_val, max_val))
+
+            def replace_var(expression):
+                """Replacement function for '${var}'."""
+                num_newlines = expression.count('\n')
+                letters = 'xyzabcdefghijklmnopqrstuvwxyz'[:num_newlines or 1]
+                return random.choice(letters)
+
+            def handle_command(match):
+                command = match.group(1)
+                if command.startswith('id['):
+                    id_match = re.match(r'id\[(\d+),(\d+)\]', command)
+                    if id_match:
+                        return replace_id_range(id_match)
+                elif command == 'var':
+                    return replace_var(expression)
+                elif command == 'none':
+                    return ""
+                return match.group(0)
+
+            pattern = r'\$\{([^}]+)\}'
+            return re.sub(pattern, handle_command, expression)
+
+        expression = find_and_process_commands(expression)
+        print(f"\n\nFinal: {expression}\n\n")
 
         return expression

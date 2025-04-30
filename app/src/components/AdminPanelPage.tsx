@@ -153,7 +153,7 @@ export default function AdminPanelPage() {
             );
 
             if (response && response.data.successful) {
-                alert("Rule removed!");
+                //alert("Rule removed!");
 
                 // update list
                 await showRules(selectedTopic, selectedOption);

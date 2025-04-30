@@ -30,6 +30,7 @@ class QuestionGenerator:
 
         # Loop through rules and add them into cfg
         for rule in sorted(self.resp["matches"], key=lambda r: r["rule_cost"]):
+            print(f"Processing database rule: {rule}")
             self.cfg.add_rule(
                 rule["rule_variable"],
                 rule["rule_ruleset"],
@@ -37,6 +38,8 @@ class QuestionGenerator:
                 rule["rule_weight"],
                 rule["rule_priority"]
             )
+
+        print("Final CFG Rules:", self.cfg.rules)
 
     @classmethod
     async def create(cls, db: Database, username: str, topic: str, q_type: str):

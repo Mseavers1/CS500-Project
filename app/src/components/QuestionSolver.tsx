@@ -61,30 +61,36 @@ const SolverInput: React.FC<SolverInputProps> = ({
         const match = solution?.match(/^\[(.*?)\]$/);
         let isCorrect = false;
 
+        // Function to convert LaTeX fraction to 'numerator/denominator'
+        function convertLatexFraction(text : string) {
+            return text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (match, num, den) => `${num}/${den}`);
+        }
+
         //alert(solution + " " + a)
 
         // Converts solution out of [] && Finds out if answer is correct
         if (match) {
-            const value = match[1];
+            let value = match[1];
 
-            // Check if matching exactly
-            if (a.toLowerCase() === value.toLowerCase()) {
+            // Convert LaTeX fractions in both solution and answer
+            const convertedSolution = convertLatexFraction(value);
+            const convertedAnswer = convertLatexFraction(a);
+
+            // Check if matching exactly (after LaTeX conversion)
+            if (convertedAnswer.toLowerCase() === convertedSolution.toLowerCase()) {
                 isCorrect = true;
             }
             // Check if matching numerically
             else {
-                const parsedSolution = parseFraction(value);
-                const parsedAnswer = parseFraction(a);
+                const parsedSolution = parseFraction(convertedSolution);
+                const parsedAnswer = parseFraction(convertedAnswer);
 
                 if (parsedSolution !== null && parsedAnswer !== null && parsedSolution === parsedAnswer) {
                     isCorrect = true;
-                }
-
-                else if (!value.includes('/') && !a.includes('/') && parseFloat(value) === parseFloat(a)) {
+                } else if (!convertedSolution.includes('/') && !convertedAnswer.includes('/') && parseFloat(convertedSolution) === parseFloat(convertedAnswer)) {
                     isCorrect = true;
                 }
             }
-
         }
         else {
 
