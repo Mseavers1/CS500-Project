@@ -32,7 +32,7 @@ function App() {
     }, [location.pathname]);
 
     useEffect(() => {
-        fetch('/data/math_terms.txt')
+        fetch('./data/math_terms.txt')
             .then((response) => response.text())
             .then((data) => {
                 const termsArray = data.split('\n').filter(t => t.trim() !== '');
