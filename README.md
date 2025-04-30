@@ -45,3 +45,4 @@ The following steps will help you install our system on your machine and run the
           - T: c 1 2 0
           - T: x 1 2 1
           - T: (c*x) 1 1 2
+     - Once added, you should be able to go to the selector panel and find the topic that you created.
