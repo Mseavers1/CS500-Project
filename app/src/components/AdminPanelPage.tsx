@@ -117,36 +117,30 @@ export default function AdminPanelPage() {
     }
 
     const showRules = async (topic: string, type: string) => {
-
-        if (selectedOption == "" || selectedTopic == "") {
+        if (type === "" || topic === "") {
             return;
         }
 
         try {
             const response = await axios.post(
-                "http://127.0.0.1" +
-                ":8000/api/question/",
+                "http://127.0.0.1:8000/api/question/",
                 {topic_name: topic, type_name: type},
                 {headers: {"Content-Type": "application/json"}}
             );
 
             if (response.data.successful) {
-
                 const matches: Match[] = response.data.matches;
-
                 setMatches(matches);
-            }
-            else {
+            } else {
                 alert(response.data.message);
             }
-
 
         } catch (error) {
             alert("Error:" + error);
             return null;
         }
+    };
 
-    }
 
     const delRule = async (id: number) => {
 
@@ -194,7 +188,7 @@ export default function AdminPanelPage() {
             );
 
             if (response && response.data.successful) {
-                alert("Rule added!");
+                //alert("Rule added!");
 
                 // Add to Question Table
                 const resp = await axios.post(
@@ -205,7 +199,7 @@ export default function AdminPanelPage() {
                 );
 
                 if (resp && resp.data.successful) {
-                    alert("Successfully added question!");
+                    //alert("Successfully added question!");
 
                     // Clear inputs
                     setCostInput("")
@@ -314,7 +308,7 @@ export default function AdminPanelPage() {
         if (!questionFormOpen) return "";
 
         return (
-            <div className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="font-poppins fixed z-10 inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{zIndex: 30}}>
 
                 <div className="bg-white p-6 rounded-lg shadow-lg text-center relative flex flex-col gap-3">
 

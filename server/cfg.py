@@ -134,7 +134,7 @@ class CFG:
                 # Replace the old variable with the expanded expression in the final expression
                 expression = replace_variable(expression, priority_location, expanded)
 
-            if only_terminals:
+            if only_terminals or step > 20:
                 break
 
             # Flip starting side only if priority is a 1

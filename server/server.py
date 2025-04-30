@@ -4,9 +4,15 @@ import re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sympy import symbols, Eq, solve, sympify
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi import Request
+
 
 from cfg import CFG
 from database import Database
+from models.add_log_model import AddLog
 from models.add_question_model import AddQuestion
 from models.add_item_name_model import AddItemName
 from models.add_rule_model import AddRule
@@ -28,13 +34,15 @@ from email.mime.multipart import MIMEMultipart
 import secrets
 import string
 
+from problem_generator import QuestionGenerator
+
 
 def generate_code(length: int = 5) -> str:
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
 
 
-# How to run server, use this in console: uvicorn server:app --reload
+# How to run server, use this in console: uvicorn server:app --reload;
 class ServerAPI:
 
     def __init__(self):
@@ -59,6 +67,16 @@ class ServerAPI:
 
     # Routes
     def setup_routes(self):
+
+        @self.app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "detail": jsonable_encoder(exc.errors()),
+                    "body": jsonable_encoder(exc.body),
+                },
+            )
 
         @self.app.post("/api/users/login/")
         async def user_login(user: UserLogin):
@@ -248,35 +266,56 @@ class ServerAPI:
 
             print(result)
 
+        @self.app.post("/api/problem/log")
+        async def add_log(log: AddLog):
+
+            user_id = await self.database.get_user(username=log.username)
+            user_id = user_id['user_id']
+
+            resp = await self.database.log_data(user_id, log.topic_name, log.type_name, log.dif,
+                                                log.is_correct, log.time_taken, log.attempts, log.skipped)
+
+            if "message" in resp:
+                raise HTTPException(status_code=500, detail=f"An error occurred: {resp['message']}")
+
+            if "successful" in resp:
+                return {"successful": resp["successful"]}
+
+            raise HTTPException(status_code=500, detail="An unexpected error occurred during registration.")
+
         @self.app.post("/api/problem/generate")
         async def generate_problem(gen: ProblemGenerator):
 
-            cfg = CFG()
+            # Generate problem
+            generator = await QuestionGenerator.create(self.database, gen.username, gen.topic, gen.q_type)
 
-            cfg.add_rule('S', 'E=E', 0, 1, 1)
-            cfg.add_rule('E', 'T', 0, 0.5, 1)
-            cfg.add_rule('E', 'E+T', 2, 0.5, 1)
-            cfg.add_rule('E', 'E-T', 2, 0.5, 1)
-            cfg.add_rule('E', 'E*(T)', 10, 0.5, 1)
-            cfg.add_rule('E', 'T*(E)', 10, 0.5, 1)
-            cfg.add_rule('E', '\\frac{T}{E}', 20, 0.5, 1)
-            cfg.add_rule('E', '\\frac{E}{T}', 20, 0.5, 1)
-            cfg.add_rule('E', '\\frac{E}{E}', 40, 0.5, 1)
-            cfg.add_rule('T', 'C', 0, 0.5, 2)
-            cfg.add_rule('T', 'x', 1, 0.5, 2)
-            cfg.add_rule('T', '(C*x)', 2, 0.5, 2)
-            cfg.add_rule('C', 'c', 0, 0.5, 2)
-            cfg.add_rule('C', '\\frac{c}{c}', 8, 0.5, 2)
+            # cfg = CFG()
+
+            # cfg.add_rule('S', 'E=E', 0, 1, 1)
+            # cfg.add_rule('E', 'T', 0, 0.5, 1)
+            # cfg.add_rule('E', 'E+T', 2, 0.5, 1)
+            # cfg.add_rule('E', 'E-T', 2, 0.5, 1)
+            # cfg.add_rule('E', 'E*(T)', 10, 0.5, 1)
+            # cfg.add_rule('E', 'T*(E)', 10, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{T}{E}', 20, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{E}{T}', 20, 0.5, 1)
+            # cfg.add_rule('E', '\\frac{E}{E}', 40, 0.5, 1)
+            # cfg.add_rule('T', 'C', 0, 0.5, 2)
+            # cfg.add_rule('T', 'x', 1, 0.5, 2)
+            # cfg.add_rule('T', '(C*x)', 2, 0.5, 2)
+            # cfg.add_rule('C', 'c', 0, 0.5, 2)
+            # cfg.add_rule('C', '\\frac{c}{c}', 8, 0.5, 2)
             # cfg.add_rule('C', 'd', 8, 0.5, 2)
 
-            problem = cfg.generate(gen.complexity)
+            # problem = cfg.generate(gen.complexity)
+            problem, dif = await generator.generate()
             solutionProblem = problem
 
             print(problem)
 
             # If division
             def replace_fractions(problem: str) -> str:
-                # Match and replace \frac{...}{...} using a simple regex pattern
+                # Match and replace \frac{...}{...}
                 pattern = r'\\frac\{([^{}]+)\}\{([^{}]+)\}'
                 return re.sub(pattern, r'((\1)/(\2))', problem)
 
@@ -307,7 +346,7 @@ class ServerAPI:
 
             print(solution)
 
-            return {"problem": problem, "solution": str(solution)}
+            return {"problem": problem, "solution": str(solution), "difficulty": dif}
 
         @self.app.post("/api/recovery/email")
         async def send_recovery_email(email: RecoveryEmail):

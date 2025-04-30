@@ -2,6 +2,7 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://mseavers1.github.io/CS500-Project",
   "dependencies": {
     "@fontsource/nunito": "^5.1.1",
     "@fontsource/poppins": "^5.1.1",
@@ -9,9 +10,12 @@
     "cra-template-typescript": "1.2.0",
     "katex": "^0.16.21",
     "lucide-react": "^0.474.0",
+    "mathlive": "^0.103.0",
+    "mathquill": "^0.10.1-a",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-katex": "^3.0.1",
+    "react-mathquill": "^1.0.3",
     "react-router-dom": "^7.2.0",
     "react-scripts": "5.0.1"
   },

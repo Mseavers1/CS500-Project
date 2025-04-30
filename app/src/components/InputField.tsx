@@ -1,14 +1,17 @@
 import React from "react";
+import "katex/dist/katex.min.css";
+import { InlineMath } from "react-katex";
 
 interface InputFieldProps {
     id: string;
     hint: string;
     value: string;
+    useMathLine?: boolean;
     setValue: React.Dispatch<React.SetStateAction<string>>;
     width?: number;
 }
 
-export default function InputField({id, hint, value, setValue, width=400}: InputFieldProps) {
+export default function InputField({id, hint, value, setValue, useMathLine=false, width=400}: InputFieldProps) {
 
     return (
         <div className="relative" style={{ width: `${width}px` }}>

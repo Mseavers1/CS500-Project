@@ -10,6 +10,7 @@ class QuestionTypeTable(Base):
     type_name = Column(String, nullable=False)
 
     questions = relationship('QuestionTable', back_populates='question_type')
+    transactions = relationship("TransactionLogTable", back_populates="question_type")
 
     def __repr__(self):
         return f"<QuestionTypeTable(id={self.type_id}, name={self.type_name})>"
