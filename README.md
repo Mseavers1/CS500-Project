@@ -1,15 +1,15 @@
 # MAP - A Math Advancement Platform
 
 ## About
-This project is for the CS500 class at Western Kentucky University under the direction of Dr. Zhonghang Xia. Currently, most platforms, such as Khan Academy, use question banks. Although their banks are massive, they are missing one key aspect to problem solving, the randomness and unexpectiveness that life brings. There will always be some problem missing,
-regardless of its importance. Textbook questions are also limited. Not only is there a limited number of questions, but most of the time, most of the questions don't have any work on how to solve the questions, only the answer, if that. For this reason, auto-generating questions is highly sought after. Questions autogenered allow users to experience infinite possibilities and, if correctly developed, can be customized to fit the user in ways that question banks can not achieve. This project is the development of such a platform, MAP. MAP is a mathematic
-question generator that allows students to solve problem sets and scales to the need of the student. The platform also gives students a complete solution with steps. In the future, I would like the project to scan handwritten solutions to analyse students' work and give feedback directly.
+This project is for the CS500 class at Western Kentucky University under the direction of Dr. Zhonghang Xia. Currently, most platforms, such as Khan Academy, use question banks. Although their banks are massive, they are missing one key aspect to problem solving: the randomness and unpredictability that life brings. There will always be some problems missing,
+regardless of their importance. Textbook questions are also limited. Not only is there a limited number of questions, but most of the time, the questions don't provide any guidance on how to solve them, only the answer, if that. For this reason, auto-generating questions is highly sought after. Questions autogenered allow users to experience infinite possibilities, and if correctly developed, can be customized to fit the user in ways that question banks cannot achieve. This project involves developing a platform called MAP. MAP is a mathematical
+question generator that allows students to solve problem sets and scales to the need of the student. The platform also provides students with a complete solution, step by step. In the future, I would like the project to scan handwritten solutions to analyse students' work and give feedback directly.
 
 ## Notice
-Some lines of code have been generated using generative AI, mainly Oracle's ChatGPT (GPT 4 Turbo). Any lines that have been generated have been commented as such.
+Some lines of code have been generated using generative AI, primarily Oracle's ChatGPT (GPT-4 Turbo). Any lines that have been generated have been commented as such.
 
 ## How to Install
-The following are the steps to install our system onto your machine and to run the code. 
+The following steps will help you install our system on your machine and run the code. 
 
 1. Download the repository and code.
 2. Install the database
@@ -34,8 +34,14 @@ The following are the steps to install our system onto your machine and to run t
      - SELECT * FROM users; --> Find the id of the newly created user or user you want to make admin
      - UPDATE users SET user_type = 'admin' WHERE user.id = 1 -- Replace 1 with the user id you want to make admin
      - Once you do these steps, when you log into the page, you should see a new admin pannel page.
-8. The default system is empty so you will need to manually add rules into the system.
-     - As as admin, in the admin panel add 'Algrebra' as a topic, 'Linear Equations' as a subtopic, and select them in the rule generator           (last column). Add the following rules (S is the starting state):
+8. The default system is empty so you will need to add rules into the system manually.
+     - As an admin, in the admin panel, add 'Algebra' as a topic, 'Linear Equations' as a subtopic, and select them in the rule generator (last column). Add the following rules (S is the starting state):
           - S: E=E 1 1 0
           - E: T+E 1 1 1
-          - 
+          - E: T-E 1 1 1
+          - E: T 1 1 0
+          - E: \\frac{T}{E} 1 1 15
+          - E: (T)*E 1 1 5
+          - T: c 1 2 0
+          - T: x 1 2 1
+          - T: (c*x) 1 1 2
